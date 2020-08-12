@@ -1,25 +1,25 @@
 modLoader="javafml"
 loaderVersion="[${loader_version},)"
-issueTrackerURL="https://github.com/Yunus1903/TemplateMod/issues"
+issueTrackerURL="https://github.com/Yunus1903/ChatEmbeds/issues"
 
 [[mods]]
-    modId="templatemod"
+    modId="chatembeds"
     version="${version}"
-    displayName="TemplateMod"
-    displayURL=""
-    logoFile=""
+    displayName="Chat Embeds"
+    displayURL="https://www.curseforge.com/minecraft/mc-mods/chat-embeds"
+    logoFile="chatembeds.png"
 
     authors="Yunus1903"
     credits=""
-    description=""
+    description="Embedded images and more in chat!"
 
-[[dependencies.templatemod]]
+[[dependencies.chatembeds]]
     modId="minecraft"
     mandatory=true
     versionRange="[${minecraft_version}]"
     ordering="NONE"
     side="BOTH"
-[[dependencies.templatemod]]
+[[dependencies.chatembeds]]
     modId="forge"
     mandatory=true
     versionRange="[${forge_version},)"
