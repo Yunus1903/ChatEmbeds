@@ -1,0 +1,27 @@
+modLoader="javafml"
+loaderVersion="[${loader_version},)"
+issueTrackerURL="https://github.com/Yunus1903/TemplateMod/issues"
+
+[[mods]]
+    modId="templatemod"
+    version="${version}"
+    displayName="TemplateMod"
+    displayURL=""
+    logoFile=""
+
+    authors="Yunus1903"
+    credits=""
+    description=""
+
+[[dependencies.templatemod]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="[${minecraft_version}]"
+    ordering="NONE"
+    side="BOTH"
+[[dependencies.templatemod]]
+    modId="forge"
+    mandatory=true
+    versionRange="[${forge_version},)"
+    ordering="NONE"
+    side="BOTH"
