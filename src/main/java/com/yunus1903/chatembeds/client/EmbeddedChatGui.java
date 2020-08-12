@@ -26,6 +26,9 @@ public class EmbeddedChatGui extends NewChatGui
 
     private final Minecraft mc;
 
+    private boolean doIndex = false;
+    private int index = 0;
+
     public EmbeddedChatGui(Minecraft mcIn)
     {
         super(mcIn);
@@ -155,6 +158,7 @@ public class EmbeddedChatGui extends NewChatGui
             }
 
             this.drawnChatLines.add(0, new ChatLine(p_238493_3_, itextproperties, p_238493_2_));
+            if (doIndex) index++;
         }
 
         Matcher matcher = Pattern.compile(URL_REGEX, Pattern.CASE_INSENSITIVE).matcher(p_238493_1_.getString());
@@ -166,8 +170,11 @@ public class EmbeddedChatGui extends NewChatGui
                 @Override
                 public void run()
                 {
+                    doIndex = true;
                     Embed embed = new Embed(matcher.group());
-                    drawnChatLines.addAll(0, Lists.reverse(embed.getLines(p_238493_3_, p_238493_2_)));
+                    drawnChatLines.addAll( index, Lists.reverse(embed.getLines(p_238493_3_, p_238493_2_)));
+                    index = 0;
+                    doIndex = false;
                 }
             }.start();
         }
