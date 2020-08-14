@@ -36,7 +36,7 @@ public class EmbeddedChatGui extends NewChatGui
     }
 
     @Override
-    public void func_238492_a_(MatrixStack p_238492_1_, int p_238492_2_)
+    public void func_238492_a_(MatrixStack matrixStack, int ticks)
     {
         if (!this.func_238496_i_())
         {
@@ -67,7 +67,7 @@ public class EmbeddedChatGui extends NewChatGui
                     ChatLine chatline = this.drawnChatLines.get(i1 + this.scrollPos);
                     if (chatline != null)
                     {
-                        int j1 = p_238492_2_ - chatline.getUpdatedCounter();
+                        int j1 = ticks - chatline.getUpdatedCounter();
                         if (j1 < 200 || flag)
                         {
                             double d5 = flag ? 1.0D : getLineBrightness(j1);
@@ -78,23 +78,23 @@ public class EmbeddedChatGui extends NewChatGui
                             {
                                 int j2 = 0;
                                 double d6 = (double)(-i1) * d3;
-                                p_238492_1_.push();
-                                p_238492_1_.translate(0.0D, 0.0D, 50.0D);
-                                fill(p_238492_1_, -2, (int)(d6 - d3), 0 + k + 4, (int)d6, i2 << 24);
+                                matrixStack.push();
+                                matrixStack.translate(0.0D, 0.0D, 50.0D);
+                                fill(matrixStack, -2, (int)(d6 - d3), 0 + k + 4, (int)d6, i2 << 24);
                                 RenderSystem.enableBlend();
-                                p_238492_1_.translate(0.0D, 0.0D, 50.0D);
+                                matrixStack.translate(0.0D, 0.0D, 50.0D);
                                 if (chatline instanceof Embed.ImageChatLine)
                                 {
                                     //TestMod.LOGGER.debug(scrollPos + "");
-                                    ((Embed.ImageChatLine) chatline).render(mc, p_238492_1_, 3, ((int)(d6 + d4)));
+                                    ((Embed.ImageChatLine) chatline).render(mc, matrixStack, 3, ((int)(d6 + d4)));
                                 }
                                 else
                                 {
-                                    this.mc.fontRenderer.func_238407_a_(p_238492_1_, chatline.func_238169_a_(), 0.0F, (float)((int)(d6 + d4)), 16777215 + (l1 << 24));
+                                    this.mc.fontRenderer.func_238407_a_(matrixStack, chatline.func_238169_a_(), 0.0F, (float)((int)(d6 + d4)), 16777215 + (l1 << 24));
                                 }
                                 RenderSystem.disableAlphaTest();
                                 RenderSystem.disableBlend();
-                                p_238492_1_.pop();
+                                matrixStack.pop();
                             }
                         }
                     }
@@ -104,13 +104,13 @@ public class EmbeddedChatGui extends NewChatGui
                 {
                     int k2 = (int)(128.0D * d1);
                     int i3 = (int)(255.0D * d2);
-                    p_238492_1_.push();
-                    p_238492_1_.translate(0.0D, 0.0D, 50.0D);
-                    fill(p_238492_1_, -2, 0, k + 4, 9, i3 << 24);
+                    matrixStack.push();
+                    matrixStack.translate(0.0D, 0.0D, 50.0D);
+                    fill(matrixStack, -2, 0, k + 4, 9, i3 << 24);
                     RenderSystem.enableBlend();
-                    p_238492_1_.translate(0.0D, 0.0D, 50.0D);
-                    this.mc.fontRenderer.func_238407_a_(p_238492_1_, new TranslationTextComponent("chat.queue", this.field_238489_i_.size()), 0.0F, 1.0F, 16777215 + (k2 << 24));
-                    p_238492_1_.pop();
+                    matrixStack.translate(0.0D, 0.0D, 50.0D);
+                    this.mc.fontRenderer.func_238407_a_(matrixStack, new TranslationTextComponent("chat.queue", this.field_238489_i_.size()), 0.0F, 1.0F, 16777215 + (k2 << 24));
+                    matrixStack.pop();
                     RenderSystem.disableAlphaTest();
                     RenderSystem.disableBlend();
                 }
@@ -127,8 +127,8 @@ public class EmbeddedChatGui extends NewChatGui
                     {
                         int i4 = l3 > 0 ? 170 : 96;
                         int j4 = this.isScrolled ? 13382451 : 3355562;
-                        fill(p_238492_1_, 0, -l3, 2, -l3 - k1, j4 + (i4 << 24));
-                        fill(p_238492_1_, 2, -l3, 1, -l3 - k1, 13421772 + (i4 << 24));
+                        fill(matrixStack, 0, -l3, 2, -l3 - k1, j4 + (i4 << 24));
+                        fill(matrixStack, 2, -l3, 1, -l3 - k1, 13421772 + (i4 << 24));
                     }
                 }
 
@@ -138,15 +138,15 @@ public class EmbeddedChatGui extends NewChatGui
     }
 
     @Override
-    public void func_238493_a_(ITextProperties p_238493_1_, int p_238493_2_, int p_238493_3_, boolean p_238493_4_)
+    public void func_238493_a_(ITextProperties chatComponent, int chatLineId, int ticks, boolean p_238493_4_)
     {
-        if (p_238493_2_ != 0)
+        if (chatLineId != 0)
         {
-            this.deleteChatLine(p_238493_2_);
+            this.deleteChatLine(chatLineId);
         }
 
         int i = MathHelper.floor((double)this.getChatWidth() / this.getScale());
-        List<ITextProperties> list = RenderComponentsUtil.func_238505_a_(p_238493_1_, i, this.mc.fontRenderer);
+        List<ITextProperties> list = RenderComponentsUtil.func_238505_a_(chatComponent, i, this.mc.fontRenderer);
         boolean flag = this.getChatOpen();
 
         for(ITextProperties itextproperties : list)
@@ -157,11 +157,11 @@ public class EmbeddedChatGui extends NewChatGui
                 this.addScrollPos(1.0D);
             }
 
-            this.drawnChatLines.add(0, new ChatLine(p_238493_3_, itextproperties, p_238493_2_));
+            this.drawnChatLines.add(0, new ChatLine(ticks, itextproperties, chatLineId));
             if (doIndex) index++;
         }
 
-        Matcher matcher = Pattern.compile(URL_REGEX, Pattern.CASE_INSENSITIVE).matcher(p_238493_1_.getString());
+        Matcher matcher = Pattern.compile(URL_REGEX, Pattern.CASE_INSENSITIVE).matcher(chatComponent.getString());
 
         if (matcher.find())
         {
@@ -172,7 +172,7 @@ public class EmbeddedChatGui extends NewChatGui
                 {
                     doIndex = true;
                     Embed embed = new Embed(matcher.group());
-                    drawnChatLines.addAll( index, Lists.reverse(embed.getLines(p_238493_3_, p_238493_2_)));
+                    drawnChatLines.addAll( index, Lists.reverse(embed.getLines(ticks, chatLineId)));
                     index = 0;
                     doIndex = false;
                 }
@@ -186,7 +186,7 @@ public class EmbeddedChatGui extends NewChatGui
 
         if (!p_238493_4_)
         {
-            this.chatLines.add(0, new ChatLine(p_238493_3_, p_238493_1_, p_238493_2_));
+            this.chatLines.add(0, new ChatLine(ticks, chatComponent, chatLineId));
 
             while(this.chatLines.size() > 100)
             {
@@ -196,17 +196,23 @@ public class EmbeddedChatGui extends NewChatGui
     }
 
     @Override
-    public boolean func_238491_a_(double p_238491_1_, double p_238491_3_)
+    public boolean func_238491_a_(double mouseX, double mouseY)
     {
-        Embed.ImageChatLine chatLine = getImageChatLine(p_238491_1_, p_238491_3_);
+        Embed.ImageChatLine chatLine = getImageChatLine(mouseX, mouseY);
         if (chatLine != null)
         {
             Minecraft.getInstance().displayGuiScreen(new EmbedImageScreen(mc.currentScreen, this.scrollPos, chatLine.getOriginalImage(), chatLine.getUrl()));
             return true;
         }
-        return super.func_238491_a_(p_238491_1_, p_238491_3_);
+        return super.func_238491_a_(mouseX, mouseY);
     }
 
+    /**
+     * Gets {@link Embed.ImageChatLine ImageChatLine} from mouse position
+     * @param mouseX Mouse X position
+     * @param mouseY Mouse Y position
+     * @return {@link Embed.ImageChatLine} instance
+     */
     @Nullable
     private Embed.ImageChatLine getImageChatLine(double mouseX, double mouseY)
     {

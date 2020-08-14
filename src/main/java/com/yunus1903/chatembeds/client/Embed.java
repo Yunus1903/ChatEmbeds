@@ -44,6 +44,9 @@ public class Embed
     private ITextProperties title = null;
     private ITextProperties description = null;
 
+    /**
+     * {@link Embed} type
+     */
     public enum Type
     {
         IMAGE, TEXT
@@ -78,7 +81,13 @@ public class Embed
         }
     }
 
-    public List<ChatLine> getLines(int p_i232239_1_, int p_i232239_3_)
+    /**
+     * The {@link ChatLine}'s that represent the embed
+     * @param ticks Minecraft ticks
+     * @param chatLineId ID of the chat line
+     * @return List with chatlines
+     */
+    public List<ChatLine> getLines(int ticks, int chatLineId)
     {
         List<ChatLine> lines = new ArrayList<>();
         if (type == Type.IMAGE && image != null && imageRL != null)
@@ -86,31 +95,35 @@ public class Embed
             double imageHeight = image.getHeight();
             double lineHeight = 9.0D;
             double totalLines = imageHeight / lineHeight;
-            lines.add(new ChatLine(p_i232239_1_, new StringTextComponent(""), p_i232239_3_));
+            lines.add(new ChatLine(ticks, new StringTextComponent(""), chatLineId));
             for (int i = 0; i < Math.ceil(totalLines); i++)
             {
                 double heightScale = i == (int) totalLines ? (totalLines - i)  : 1.0D;
-                lines.add(new ImageChatLine(p_i232239_1_, p_i232239_3_, url.toString(), image, imageRL, 0, (float) (i * lineHeight), image.getWidth(), (int) (lineHeight * heightScale), image.getWidth(), image.getHeight(), originalImage));
+                lines.add(new ImageChatLine(ticks, chatLineId, url.toString(), image, imageRL, 0, (float) (i * lineHeight), image.getWidth(), (int) (lineHeight * heightScale), image.getWidth(), image.getHeight(), originalImage));
             }
         }
         else if (type == Type.TEXT && title != null)
         {
-            lines.add(new ChatLine(p_i232239_1_, new StringTextComponent(""), p_i232239_3_));
-            lines.add(new ChatLine(p_i232239_1_, title, p_i232239_3_));
-            lines.add(new ChatLine(p_i232239_1_, new StringTextComponent(""), p_i232239_3_));
+            lines.add(new ChatLine(ticks, new StringTextComponent(""), chatLineId));
+            lines.add(new ChatLine(ticks, title, chatLineId));
+            lines.add(new ChatLine(ticks, new StringTextComponent(""), chatLineId));
             if (description != null)
             {
                 int i = MathHelper.floor((double) NewChatGui.calculateChatboxWidth(Minecraft.getInstance().gameSettings.chatWidth) / Minecraft.getInstance().gameSettings.chatScale);
                 List<ITextProperties> list = RenderComponentsUtil.func_238505_a_(description, i, Minecraft.getInstance().fontRenderer);
                 description = new StringTextComponent("");
                 list.forEach(line ->
-                        lines.add(new ChatLine(p_i232239_1_, new StringTextComponent(line.getString()).mergeStyle(TextFormatting.GRAY), p_i232239_3_)));
-                lines.add(new ChatLine(p_i232239_1_, new StringTextComponent(""), p_i232239_3_));
+                        lines.add(new ChatLine(ticks, new StringTextComponent(line.getString()).mergeStyle(TextFormatting.GRAY), chatLineId)));
+                lines.add(new ChatLine(ticks, new StringTextComponent(""), chatLineId));
             }
         }
         return lines;
     }
 
+    /**
+     * Load {@link Embed#originalImage}, {@link Embed#imageRL} and {@link Embed#image} from {@link Embed#url}
+     * @return true if {@link Embed#originalImage}, {@link Embed#imageRL} and {@link Embed#image} are set
+     */
     private boolean loadImage()
     {
         try
@@ -149,6 +162,10 @@ public class Embed
         return true;
     }
 
+    /**
+     * Load {@link Embed#title} and {@link Embed#description} from {@link Embed#url}
+     * @return true if succeeded in reading HTML
+     */
     private boolean loadText()
     {
         try
@@ -192,6 +209,9 @@ public class Embed
         return false;
     }
 
+    /**
+     * {@link ChatLine} that renders a image instead of {@link ITextProperties}
+     */
     public static class ImageChatLine extends ChatLine
     {
         private final String url;
@@ -221,30 +241,44 @@ public class Embed
             this.originalImage = originalImage;
         }
 
+        /**
+         * Renders {@link Embed.ImageChatLine#imageRL image}
+         * @param mc Minecraft instance
+         * @param matrixStack MatrixStack instance
+         * @param x X position
+         * @param y Y position
+         */
         public void render(Minecraft mc, MatrixStack matrixStack, int x, int y)
         {
             mc.getTextureManager().bindTexture(imageRL);
             AbstractGui.blit(matrixStack, x, y, u0, v0, destWidth, destHeight, textureWidth, textureHeight);
         }
 
+        /**
+         * Image origin URL
+         * @return {@link Embed.ImageChatLine#url}
+         */
         public String getUrl()
         {
             return url;
         }
 
+        /**
+         * Scaled image
+         * @return {@link Embed.ImageChatLine#image}
+         */
         public NativeImage getImage()
         {
             return image;
         }
 
+        /**
+         * Original image
+         * @return {@link Embed.ImageChatLine#originalImage}
+         */
         public NativeImage getOriginalImage()
         {
             return originalImage;
         }
     }
-
-//    public static class AnimatedImageChatLine extends ImageChatLine
-//    {
-//          gifffs
-//    }
 }
