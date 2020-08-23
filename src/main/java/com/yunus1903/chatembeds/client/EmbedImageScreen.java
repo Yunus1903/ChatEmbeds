@@ -6,10 +6,7 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.renderer.texture.NativeImage;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.IFormattableTextComponent;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.Style;
-import net.minecraft.util.text.TextFormatting;
+import net.minecraft.util.text.*;
 import net.minecraft.util.text.event.ClickEvent;
 
 /**
@@ -74,14 +71,14 @@ public class EmbedImageScreen extends Screen
         minecraft.getTextureManager().bindTexture(imageRL);
         AbstractGui.blit(matrixStack, (width - imageWidth) / 2, (height - imageHeight) / 2, 0, 0, imageWidth, imageHeight, imageWidth, imageHeight);
 
-        if (mouseOverOpenImage(mouseX, mouseY)) openImage.mergeStyle(TextFormatting.UNDERLINE);
+        if (mouseOverImage(mouseX, mouseY)) openImage.mergeStyle(TextFormatting.UNDERLINE);
         else
         {
             openImage.setStyle(Style.EMPTY.setClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, url)));
             openImage.mergeStyle(TextFormatting.DARK_GRAY);
         }
 
-        minecraft.fontRenderer.func_238407_a_(matrixStack, openImage, ((width - imageWidth) >> 1), ((height - imageHeight) >> 1) + imageHeight + 5, 0xFFFFFF);
+        minecraft.fontRenderer.func_238407_a_(matrixStack, LanguageMap.getInstance().func_241870_a(openImage), ((width - imageWidth) >> 1), ((height - imageHeight) >> 1) + imageHeight + 5, 0xFFFFFF);
     }
 
     @Override
@@ -89,7 +86,7 @@ public class EmbedImageScreen extends Screen
     {
         if (mouseX < (width - imageWidth) >> 1 || mouseX > ((width - imageWidth) >> 1) + imageWidth || mouseY < (height - imageHeight) >> 1 || mouseY > ((height - imageHeight) >> 1) + imageHeight)
         {
-            if (mouseOverOpenImage(mouseX, mouseY)) handleComponentClicked(openImage.getStyle());
+            if (mouseOverImage(mouseX, mouseY)) handleComponentClicked(openImage.getStyle());
             else closeScreen();
             return true;
         }
@@ -103,7 +100,13 @@ public class EmbedImageScreen extends Screen
         minecraft.ingameGUI.getChatGUI().scrollPos = scrollPos;
     }
 
-    private boolean mouseOverOpenImage(double mouseX, double mouseY)
+    /**
+     * Check if mouse if hovering over the image
+     * @param mouseX Mouse X position
+     * @param mouseY Mouse Y position
+     * @return true if mouse is hovering over the shown image
+     */
+    private boolean mouseOverImage(double mouseX, double mouseY)
     {
         if (mouseX >= ((width - imageWidth) >> 1) && mouseX <= ((width - imageWidth) >> 1) + minecraft.fontRenderer.getStringWidth(openImage.getString()) && mouseY >= ((height - imageHeight) >> 1) + imageHeight + 5 && mouseY <= ((height - imageHeight) >> 1) + imageHeight + 5 + minecraft.fontRenderer.FONT_HEIGHT)
         {

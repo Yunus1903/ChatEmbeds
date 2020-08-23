@@ -10,11 +10,10 @@ import net.minecraft.client.gui.NewChatGui;
 import net.minecraft.client.gui.RenderComponentsUtil;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.renderer.texture.NativeImage;
+import net.minecraft.util.IReorderingProcessor;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.text.ITextProperties;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TextFormatting;
+import net.minecraft.util.text.*;
 
 import javax.swing.text.html.HTML;
 import javax.swing.text.html.HTMLDocument;
@@ -44,6 +43,9 @@ public class Embed
     private ITextProperties title = null;
     private ITextProperties description = null;
 
+    /**
+     * {@link Embed} type
+     */
     public enum Type
     {
         IMAGE, TEXT
@@ -78,39 +80,48 @@ public class Embed
         }
     }
 
-    public List<ChatLine> getLines(int p_i232239_1_, int p_i232239_3_)
+    /**
+     * The {@link ChatLine}'s that represent the embed
+     * @param ticks Minecraft ticks
+     * @param chatLineId ID of the chat line
+     * @return List with chatlines
+     */
+    public List<? extends ChatLine<IReorderingProcessor>> getLines(int ticks, int chatLineId)
     {
-        List<ChatLine> lines = new ArrayList<>();
+        List<ChatLine<IReorderingProcessor>> lines = new ArrayList<>();
         if (type == Type.IMAGE && image != null && imageRL != null)
         {
             double imageHeight = image.getHeight();
             double lineHeight = 9.0D;
             double totalLines = imageHeight / lineHeight;
-            lines.add(new ChatLine(p_i232239_1_, new StringTextComponent(""), p_i232239_3_));
+            lines.add(new ChatLine<>(ticks, LanguageMap.getInstance().func_241870_a(new StringTextComponent("")), chatLineId));
             for (int i = 0; i < Math.ceil(totalLines); i++)
             {
                 double heightScale = i == (int) totalLines ? (totalLines - i)  : 1.0D;
-                lines.add(new ImageChatLine(p_i232239_1_, p_i232239_3_, url.toString(), image, imageRL, 0, (float) (i * lineHeight), image.getWidth(), (int) (lineHeight * heightScale), image.getWidth(), image.getHeight(), originalImage));
+                lines.add(new ImageChatLine(ticks, chatLineId, url.toString(), image, imageRL, 0, (float) (i * lineHeight), image.getWidth(), (int) (lineHeight * heightScale), image.getWidth(), image.getHeight(), originalImage));
             }
         }
         else if (type == Type.TEXT && title != null)
         {
-            lines.add(new ChatLine(p_i232239_1_, new StringTextComponent(""), p_i232239_3_));
-            lines.add(new ChatLine(p_i232239_1_, title, p_i232239_3_));
-            lines.add(new ChatLine(p_i232239_1_, new StringTextComponent(""), p_i232239_3_));
+            lines.add(new ChatLine<>(ticks, LanguageMap.getInstance().func_241870_a(new StringTextComponent("")), chatLineId));
+            lines.add(new ChatLine<>(ticks, LanguageMap.getInstance().func_241870_a(title), chatLineId));
+            lines.add(new ChatLine<>(ticks, LanguageMap.getInstance().func_241870_a(new StringTextComponent("")), chatLineId));
             if (description != null)
             {
                 int i = MathHelper.floor((double) NewChatGui.calculateChatboxWidth(Minecraft.getInstance().gameSettings.chatWidth) / Minecraft.getInstance().gameSettings.chatScale);
-                List<ITextProperties> list = RenderComponentsUtil.func_238505_a_(description, i, Minecraft.getInstance().fontRenderer);
-                description = new StringTextComponent("");
-                list.forEach(line ->
-                        lines.add(new ChatLine(p_i232239_1_, new StringTextComponent(line.getString()).mergeStyle(TextFormatting.GRAY), p_i232239_3_)));
-                lines.add(new ChatLine(p_i232239_1_, new StringTextComponent(""), p_i232239_3_));
+                description = ((IFormattableTextComponent) description).mergeStyle(TextFormatting.GRAY);
+                List<IReorderingProcessor> list = RenderComponentsUtil.func_238505_a_(description, i, Minecraft.getInstance().fontRenderer);
+                list.forEach(line -> lines.add(new ChatLine<>(ticks, line, chatLineId)));
+                lines.add(new ChatLine<>(ticks, LanguageMap.getInstance().func_241870_a(new StringTextComponent("")), chatLineId));
             }
         }
         return lines;
     }
 
+    /**
+     * Load {@link Embed#originalImage}, {@link Embed#imageRL} and {@link Embed#image} from {@link Embed#url}
+     * @return true if {@link Embed#originalImage}, {@link Embed#imageRL} and {@link Embed#image} are set
+     */
     private boolean loadImage()
     {
         try
@@ -149,6 +160,10 @@ public class Embed
         return true;
     }
 
+    /**
+     * Load {@link Embed#title} and {@link Embed#description} from {@link Embed#url}
+     * @return true if succeeded in reading HTML
+     */
     private boolean loadText()
     {
         try
@@ -192,7 +207,10 @@ public class Embed
         return false;
     }
 
-    public static class ImageChatLine extends ChatLine
+    /**
+     * {@link ChatLine} that renders a image instead of {@link ITextProperties}
+     */
+    public static class ImageChatLine extends ChatLine<IReorderingProcessor>
     {
         private final String url;
         private final NativeImage image;
@@ -201,14 +219,14 @@ public class Embed
         private final float u0, v0;
         private final int destWidth, destHeight, textureWidth, textureHeight;
 
-        public ImageChatLine(int p_i232239_1_, int p_i232239_3_, String url, NativeImage image, ResourceLocation imageRL, float u0, float v0, int destWidth, int destHeight, int textureWidth, int textureHeight)
+        public ImageChatLine(int ticks, int chatLineId, String url, NativeImage image, ResourceLocation imageRL, float u0, float v0, int destWidth, int destHeight, int textureWidth, int textureHeight)
         {
-            this(p_i232239_1_, p_i232239_3_, url, image, imageRL, u0, v0, destWidth, destHeight, textureWidth, textureHeight, image);
+            this(ticks, chatLineId, url, image, imageRL, u0, v0, destWidth, destHeight, textureWidth, textureHeight, image);
         }
 
-        public ImageChatLine(int p_i232239_1_, int p_i232239_3_, String url, NativeImage image, ResourceLocation imageRL, float u0, float v0, int destWidth, int destHeight, int textureWidth, int textureHeight, NativeImage originalImage)
+        public ImageChatLine(int ticks, int chatLineId, String url, NativeImage image, ResourceLocation imageRL, float u0, float v0, int destWidth, int destHeight, int textureWidth, int textureHeight, NativeImage originalImage)
         {
-            super(p_i232239_1_, new StringTextComponent(""), p_i232239_3_);
+            super(ticks, LanguageMap.getInstance().func_241870_a(new StringTextComponent("")), chatLineId);
             this.url = url;
             this.image = image;
             this.imageRL = imageRL;
@@ -221,30 +239,44 @@ public class Embed
             this.originalImage = originalImage;
         }
 
+        /**
+         * Renders {@link Embed.ImageChatLine#imageRL image}
+         * @param mc Minecraft instance
+         * @param matrixStack MatrixStack instance
+         * @param x X position
+         * @param y Y position
+         */
         public void render(Minecraft mc, MatrixStack matrixStack, int x, int y)
         {
             mc.getTextureManager().bindTexture(imageRL);
             AbstractGui.blit(matrixStack, x, y, u0, v0, destWidth, destHeight, textureWidth, textureHeight);
         }
 
+        /**
+         * Image origin URL
+         * @return {@link Embed.ImageChatLine#url}
+         */
         public String getUrl()
         {
             return url;
         }
 
+        /**
+         * Scaled image
+         * @return {@link Embed.ImageChatLine#image}
+         */
         public NativeImage getImage()
         {
             return image;
         }
 
+        /**
+         * Original image
+         * @return {@link Embed.ImageChatLine#originalImage}
+         */
         public NativeImage getOriginalImage()
         {
             return originalImage;
         }
     }
-
-//    public static class AnimatedImageChatLine extends ImageChatLine
-//    {
-//          gifffs
-//    }
 }
