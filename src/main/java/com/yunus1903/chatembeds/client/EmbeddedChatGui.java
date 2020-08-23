@@ -7,8 +7,9 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ChatLine;
 import net.minecraft.client.gui.NewChatGui;
 import net.minecraft.client.gui.RenderComponentsUtil;
+import net.minecraft.util.IReorderingProcessor;
 import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.text.ITextProperties;
+import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 
 import javax.annotation.Nullable;
@@ -64,7 +65,7 @@ public class EmbeddedChatGui extends NewChatGui
 
                 for(int i1 = 0; i1 + this.scrollPos < this.drawnChatLines.size() && i1 < i; ++i1)
                 {
-                    ChatLine chatline = this.drawnChatLines.get(i1 + this.scrollPos);
+                    ChatLine<IReorderingProcessor> chatline = this.drawnChatLines.get(i1 + this.scrollPos);
                     if (chatline != null)
                     {
                         int j1 = ticks - chatline.getUpdatedCounter();
@@ -85,7 +86,6 @@ public class EmbeddedChatGui extends NewChatGui
                                 matrixStack.translate(0.0D, 0.0D, 50.0D);
                                 if (chatline instanceof Embed.ImageChatLine)
                                 {
-                                    //TestMod.LOGGER.debug(scrollPos + "");
                                     ((Embed.ImageChatLine) chatline).render(mc, matrixStack, 3, ((int)(d6 + d4)));
                                 }
                                 else
@@ -109,7 +109,7 @@ public class EmbeddedChatGui extends NewChatGui
                     fill(matrixStack, -2, 0, k + 4, 9, i3 << 24);
                     RenderSystem.enableBlend();
                     matrixStack.translate(0.0D, 0.0D, 50.0D);
-                    this.mc.fontRenderer.func_238407_a_(matrixStack, new TranslationTextComponent("chat.queue", this.field_238489_i_.size()), 0.0F, 1.0F, 16777215 + (k2 << 24));
+                    this.mc.fontRenderer.func_243246_a(matrixStack, new TranslationTextComponent("chat.queue", this.field_238489_i_.size()), 0.0F, 1.0F, 16777215 + (k2 << 24));
                     matrixStack.pop();
                     RenderSystem.disableAlphaTest();
                     RenderSystem.disableBlend();
@@ -138,7 +138,7 @@ public class EmbeddedChatGui extends NewChatGui
     }
 
     @Override
-    public void func_238493_a_(ITextProperties chatComponent, int chatLineId, int ticks, boolean p_238493_4_)
+    public void func_238493_a_(ITextComponent chatComponent, int chatLineId, int ticks, boolean p_238493_4_)
     {
         if (chatLineId != 0)
         {
@@ -146,10 +146,10 @@ public class EmbeddedChatGui extends NewChatGui
         }
 
         int i = MathHelper.floor((double)this.getChatWidth() / this.getScale());
-        List<ITextProperties> list = RenderComponentsUtil.func_238505_a_(chatComponent, i, this.mc.fontRenderer);
+        List<IReorderingProcessor> list = RenderComponentsUtil.func_238505_a_(chatComponent, i, this.mc.fontRenderer);
         boolean flag = this.getChatOpen();
 
-        for(ITextProperties itextproperties : list)
+        for(IReorderingProcessor iReorderingProcessor : list)
         {
             if (flag && this.scrollPos > 0)
             {
@@ -157,7 +157,7 @@ public class EmbeddedChatGui extends NewChatGui
                 this.addScrollPos(1.0D);
             }
 
-            this.drawnChatLines.add(0, new ChatLine(ticks, itextproperties, chatLineId));
+            this.drawnChatLines.add(0, new ChatLine<>(ticks, iReorderingProcessor, chatLineId));
             if (doIndex) index++;
         }
 
@@ -172,7 +172,7 @@ public class EmbeddedChatGui extends NewChatGui
                 {
                     doIndex = true;
                     Embed embed = new Embed(matcher.group());
-                    drawnChatLines.addAll( index, Lists.reverse(embed.getLines(ticks, chatLineId)));
+                    drawnChatLines.addAll(index, Lists.reverse(embed.getLines(ticks, chatLineId)));
                     index = 0;
                     doIndex = false;
                 }
@@ -186,7 +186,7 @@ public class EmbeddedChatGui extends NewChatGui
 
         if (!p_238493_4_)
         {
-            this.chatLines.add(0, new ChatLine(ticks, chatComponent, chatLineId));
+            this.chatLines.add(0, new ChatLine<>(ticks, chatComponent, chatLineId));
 
             while(this.chatLines.size() > 100)
             {
@@ -230,7 +230,7 @@ public class EmbeddedChatGui extends NewChatGui
                     int j = (int)(d1 / 9.0D + (double)this.scrollPos);
                     if (j >= 0 && j < this.drawnChatLines.size())
                     {
-                        ChatLine chatLine = this.drawnChatLines.get(j);
+                        ChatLine<?> chatLine = this.drawnChatLines.get(j);
                         if (chatLine instanceof Embed.ImageChatLine)
                         {
                             if (d0 - 3 <= ((Embed.ImageChatLine) chatLine).getImage().getWidth())

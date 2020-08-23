@@ -6,10 +6,7 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.renderer.texture.NativeImage;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.IFormattableTextComponent;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.Style;
-import net.minecraft.util.text.TextFormatting;
+import net.minecraft.util.text.*;
 import net.minecraft.util.text.event.ClickEvent;
 
 /**
@@ -81,7 +78,7 @@ public class EmbedImageScreen extends Screen
             openImage.mergeStyle(TextFormatting.DARK_GRAY);
         }
 
-        minecraft.fontRenderer.func_238407_a_(matrixStack, openImage, ((width - imageWidth) >> 1), ((height - imageHeight) >> 1) + imageHeight + 5, 0xFFFFFF);
+        minecraft.fontRenderer.func_238407_a_(matrixStack, LanguageMap.getInstance().func_241870_a(openImage), ((width - imageWidth) >> 1), ((height - imageHeight) >> 1) + imageHeight + 5, 0xFFFFFF);
     }
 
     @Override

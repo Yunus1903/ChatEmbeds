@@ -1,5 +1,6 @@
 modLoader="javafml"
 loaderVersion="[${loader_version},)"
+license="GNU General Public License v3.0"
 issueTrackerURL="https://github.com/Yunus1903/ChatEmbeds/issues"
 
 [[mods]]
