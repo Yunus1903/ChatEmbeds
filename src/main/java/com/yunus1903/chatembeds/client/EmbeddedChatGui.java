@@ -3,6 +3,8 @@ package com.yunus1903.chatembeds.client;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.yunus1903.chatembeds.client.embed.Embed;
+import com.yunus1903.chatembeds.client.embed.ImageEmbed;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ChatLine;
 import net.minecraft.client.gui.NewChatGui;
@@ -84,9 +86,9 @@ public class EmbeddedChatGui extends NewChatGui
                                 fill(matrixStack, -2, (int)(d6 - d3), 0 + k + 4, (int)d6, i2 << 24);
                                 RenderSystem.enableBlend();
                                 matrixStack.translate(0.0D, 0.0D, 50.0D);
-                                if (chatline instanceof Embed.ImageChatLine)
+                                if (chatline instanceof Embed.EmbedChatLine)
                                 {
-                                    ((Embed.ImageChatLine) chatline).render(mc, matrixStack, 3, ((int)(d6 + d4)));
+                                    ((Embed.EmbedChatLine) chatline).render(mc, matrixStack, 3, ((int)(d6 + d4)));
                                 }
                                 else
                                 {
@@ -171,8 +173,10 @@ public class EmbeddedChatGui extends NewChatGui
                 public void run()
                 {
                     doIndex = true;
-                    Embed embed = new Embed(matcher.group());
-                    drawnChatLines.addAll(index, Lists.reverse(embed.getLines(ticks, chatLineId)));
+
+                    Embed embed = new Embed.Builder(matcher.group(), ticks, chatLineId).build();
+                    if (embed != null) drawnChatLines.addAll(index, Lists.reverse(embed.getChatLines()));
+
                     index = 0;
                     doIndex = false;
                 }
@@ -198,23 +202,23 @@ public class EmbeddedChatGui extends NewChatGui
     @Override
     public boolean func_238491_a_(double mouseX, double mouseY)
     {
-        Embed.ImageChatLine chatLine = getImageChatLine(mouseX, mouseY);
-        if (chatLine != null)
+        Embed embed = getEmbed(mouseX, mouseY);
+        if (embed instanceof ImageEmbed)
         {
-            Minecraft.getInstance().displayGuiScreen(new EmbedImageScreen(mc.currentScreen, this.scrollPos, chatLine.getOriginalImage(), chatLine.getUrl()));
+            Minecraft.getInstance().displayGuiScreen(new ImageEmbedScreen(mc.currentScreen, this.scrollPos, (ImageEmbed) embed));
             return true;
         }
         return super.func_238491_a_(mouseX, mouseY);
     }
 
     /**
-     * Gets {@link Embed.ImageChatLine ImageChatLine} from mouse position
-     * @param mouseX Mouse X position
-     * @param mouseY Mouse Y position
-     * @return {@link Embed.ImageChatLine} instance
+     * Gets {@link Embed embed} from mouse position
+     * @param mouseX mouseX Mouse X position
+     * @param mouseY mouseY Mouse Y position
+     * @return {@link Embed} instance
      */
     @Nullable
-    private Embed.ImageChatLine getImageChatLine(double mouseX, double mouseY)
+    private Embed getEmbed(double mouseX, double mouseY)
     {
         if (this.getChatOpen() && !this.mc.gameSettings.hideGUI && !this.func_238496_i_())
         {
@@ -230,12 +234,12 @@ public class EmbeddedChatGui extends NewChatGui
                     int j = (int)(d1 / 9.0D + (double)this.scrollPos);
                     if (j >= 0 && j < this.drawnChatLines.size())
                     {
-                        ChatLine<?> chatLine = this.drawnChatLines.get(j);
-                        if (chatLine instanceof Embed.ImageChatLine)
+                        ChatLine<IReorderingProcessor> chatLine = this.drawnChatLines.get(j);
+                        if (chatLine instanceof Embed.EmbedChatLine)
                         {
-                            if (d0 - 3 <= ((Embed.ImageChatLine) chatLine).getImage().getWidth())
+                            if (d0 - 3 <= ((Embed.EmbedChatLine) chatLine).getWidth())
                             {
-                                return (Embed.ImageChatLine) chatLine;
+                                return ((Embed.EmbedChatLine) chatLine).getEmbed();
                             }
                         }
                     }

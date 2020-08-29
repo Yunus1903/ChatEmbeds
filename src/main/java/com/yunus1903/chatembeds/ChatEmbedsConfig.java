@@ -55,7 +55,7 @@ public class ChatEmbedsConfig
                     .define("enableImageEmbeds", true);
 
             ENABLE_TEXT_EMBEDS = builder
-                    .comment("Enable text embeds (Work in progress)") // todo write somewhere (trello, gitkraken glo?)
+                    .comment("Enable text embeds (Work in progress)")
                     .define("enableTextEmbeds", false);
 
             CHAT_IMAGE_EMBED_MAX_WIDTH = builder
