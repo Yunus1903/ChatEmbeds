@@ -37,11 +37,13 @@ public class ChatEmbedsConfig
     public static class GeneralConfig
     {
         public static boolean enableImageEmbeds;
+        public static boolean enableAnimatedImageEmbeds;
         public static boolean enableTextEmbeds;
         public static int chatImageEmbedMaxWidth;
         public static int chatImageEmbedMaxHeight;
 
         private final ForgeConfigSpec.BooleanValue ENABLE_IMAGE_EMBEDS;
+        private final ForgeConfigSpec.BooleanValue ENABLE_ANIMATED_IMAGE_EMBEDS;
         private final ForgeConfigSpec.BooleanValue ENABLE_TEXT_EMBEDS;
         private final ForgeConfigSpec.IntValue CHAT_IMAGE_EMBED_MAX_WIDTH;
         private final ForgeConfigSpec.IntValue CHAT_IMAGE_EMBED_MAX_HEIGHT;
@@ -51,7 +53,11 @@ public class ChatEmbedsConfig
             builder.comment("General config").push("general");
 
             ENABLE_IMAGE_EMBEDS = builder
-                    .comment("Enable image embeds")
+                    .comment("Enable image embeds (png, jpg, jpeg)")
+                    .define("enableImageEmbeds", true);
+
+            ENABLE_ANIMATED_IMAGE_EMBEDS = builder
+                    .comment("Enable animated image embeds (gif)")
                     .define("enableImageEmbeds", true);
 
             ENABLE_TEXT_EMBEDS = builder
@@ -72,6 +78,7 @@ public class ChatEmbedsConfig
         public void bake()
         {
             enableImageEmbeds = ENABLE_IMAGE_EMBEDS.get();
+            enableAnimatedImageEmbeds = ENABLE_ANIMATED_IMAGE_EMBEDS.get();
             enableTextEmbeds = ENABLE_TEXT_EMBEDS.get();
             chatImageEmbedMaxWidth = CHAT_IMAGE_EMBED_MAX_WIDTH.get();
             chatImageEmbedMaxHeight = CHAT_IMAGE_EMBED_MAX_HEIGHT.get();

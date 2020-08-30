@@ -3,12 +3,16 @@ package com.yunus1903.chatembeds.client;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.yunus1903.chatembeds.client.embed.AnimatedImageEmbed;
 import com.yunus1903.chatembeds.client.embed.Embed;
 import com.yunus1903.chatembeds.client.embed.ImageEmbed;
+import com.yunus1903.chatembeds.client.screen.AnimatedImageEmbedScreen;
+import com.yunus1903.chatembeds.client.screen.ImageEmbedScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ChatLine;
 import net.minecraft.client.gui.NewChatGui;
 import net.minecraft.client.gui.RenderComponentsUtil;
+import net.minecraft.client.gui.screen.ChatScreen;
 import net.minecraft.util.IReorderingProcessor;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.ITextComponent;
@@ -86,9 +90,9 @@ public class EmbeddedChatGui extends NewChatGui
                                 fill(matrixStack, -2, (int)(d6 - d3), 0 + k + 4, (int)d6, i2 << 24);
                                 RenderSystem.enableBlend();
                                 matrixStack.translate(0.0D, 0.0D, 50.0D);
-                                if (chatline instanceof Embed.EmbedChatLine)
+                                if (chatline instanceof EmbedChatLine)
                                 {
-                                    ((Embed.EmbedChatLine) chatline).render(mc, matrixStack, 3, ((int)(d6 + d4)));
+                                    ((EmbedChatLine<?>) chatline).render(mc, matrixStack, 3, ((int)(d6 + d4)));
                                 }
                                 else
                                 {
@@ -167,7 +171,7 @@ public class EmbeddedChatGui extends NewChatGui
 
         if (matcher.find())
         {
-            new Thread("embed_loader")
+            new Thread("Embed loader")
             {
                 @Override
                 public void run()
@@ -203,10 +207,18 @@ public class EmbeddedChatGui extends NewChatGui
     public boolean func_238491_a_(double mouseX, double mouseY)
     {
         Embed embed = getEmbed(mouseX, mouseY);
-        if (embed instanceof ImageEmbed)
+        if (mc.currentScreen instanceof ChatScreen)
         {
-            Minecraft.getInstance().displayGuiScreen(new ImageEmbedScreen(mc.currentScreen, this.scrollPos, (ImageEmbed) embed));
-            return true;
+            if (embed instanceof AnimatedImageEmbed)
+            {
+                Minecraft.getInstance().displayGuiScreen(new AnimatedImageEmbedScreen((ChatScreen) mc.currentScreen, this.scrollPos, (AnimatedImageEmbed) embed));
+                return true;
+            }
+            if (embed instanceof ImageEmbed)
+            {
+                Minecraft.getInstance().displayGuiScreen(new ImageEmbedScreen((ChatScreen) mc.currentScreen, this.scrollPos, (ImageEmbed) embed));
+                return true;
+            }
         }
         return super.func_238491_a_(mouseX, mouseY);
     }
@@ -235,11 +247,11 @@ public class EmbeddedChatGui extends NewChatGui
                     if (j >= 0 && j < this.drawnChatLines.size())
                     {
                         ChatLine<IReorderingProcessor> chatLine = this.drawnChatLines.get(j);
-                        if (chatLine instanceof Embed.EmbedChatLine)
+                        if (chatLine instanceof EmbedChatLine)
                         {
-                            if (d0 - 3 <= ((Embed.EmbedChatLine) chatLine).getWidth())
+                            if (d0 - 3 <= ((EmbedChatLine<?>) chatLine).getWidth())
                             {
-                                return ((Embed.EmbedChatLine) chatLine).getEmbed();
+                                return ((EmbedChatLine<?>) chatLine).getEmbed();
                             }
                         }
                     }

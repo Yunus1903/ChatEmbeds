@@ -3,6 +3,7 @@ package com.yunus1903.chatembeds.client.embed;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.yunus1903.chatembeds.ChatEmbeds;
 import com.yunus1903.chatembeds.ChatEmbedsConfig;
+import com.yunus1903.chatembeds.client.EmbedChatLine;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.AbstractGui;
 import net.minecraft.client.gui.ChatLine;
@@ -54,9 +55,8 @@ public class ImageEmbed extends Embed
             int destHeight = (int) (lineHeight * heightScale);
             int textureWidth = scaledImage.getWidth();
             int textureHeight = scaledImage.getHeight();
-            Embed embed = this;
 
-            lines.add(new EmbedChatLine(ticks, chatLineId)
+            lines.add(new EmbedChatLine<ImageEmbed>(ticks, chatLineId, this)
             {
                 @Override
                 public void render(Minecraft mc, MatrixStack matrixStack, int x, int y)
@@ -69,12 +69,6 @@ public class ImageEmbed extends Embed
                 public int getWidth()
                 {
                     return scaledImage.getWidth();
-                }
-
-                @Override
-                public Embed getEmbed()
-                {
-                    return embed;
                 }
             });
         }
@@ -96,14 +90,14 @@ public class ImageEmbed extends Embed
 
         if (image == null) return false;
 
+        scaledImage = scaleImage(image, ChatEmbedsConfig.GeneralConfig.chatImageEmbedMaxWidth, ChatEmbedsConfig.GeneralConfig.chatImageEmbedMaxHeight);
         imageResourceLocation = Minecraft.getInstance().getTextureManager()
                 .getDynamicTextureLocation("chat_embed_image", new DynamicTexture(image));
 
-        scaledImage =  scaleImage(image, ChatEmbedsConfig.GeneralConfig.chatImageEmbedMaxWidth, ChatEmbedsConfig.GeneralConfig.chatImageEmbedMaxHeight);
         return true;
     }
 
-    private static NativeImage scaleImage(NativeImage image, int maxWidth, int maxHeight)
+    protected static NativeImage scaleImage(NativeImage image, int maxWidth, int maxHeight)
     {
         int width = image.getWidth();
         int height = image.getHeight();

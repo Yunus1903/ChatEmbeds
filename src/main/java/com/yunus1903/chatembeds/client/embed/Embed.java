@@ -1,13 +1,9 @@
 package com.yunus1903.chatembeds.client.embed;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
 import com.yunus1903.chatembeds.ChatEmbeds;
 import com.yunus1903.chatembeds.ChatEmbedsConfig;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ChatLine;
 import net.minecraft.util.IReorderingProcessor;
-import net.minecraft.util.text.LanguageMap;
-import net.minecraft.util.text.StringTextComponent;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -140,46 +136,11 @@ public abstract class Embed
             }
             else if (extension.equals("gif"))
             {
-                //if (ChatEmbedsConfig.GeneralConfig.enableAnimatedImageEmbeds)
-                return new AnimatedImageEmbed(url, ticks, chatLineId);
+                if (ChatEmbedsConfig.GeneralConfig.enableAnimatedImageEmbeds)
+                    return new AnimatedImageEmbed(url, ticks, chatLineId);
             }
-            if (ChatEmbedsConfig.GeneralConfig.enableTextEmbeds) return new TextEmbed(url, ticks, chatLineId);
+            else if (ChatEmbedsConfig.GeneralConfig.enableTextEmbeds) return new TextEmbed(url, ticks, chatLineId);
             return null;
         }
-    }
-
-    /**
-     * {@link ChatLine} class for chat embeds
-     */
-    public static abstract class EmbedChatLine extends ChatLine<IReorderingProcessor>
-    {
-        /**
-         * Constructor
-         * @param ticks Minecraft ticks
-         * @param chatLineId ID of the chat line
-         */
-        public EmbedChatLine(int ticks, int chatLineId)
-        {
-            super(ticks, LanguageMap.getInstance().func_241870_a(new StringTextComponent("")), chatLineId);
-        }
-
-        /**
-         * Renders the embed
-         * @param mc Instance of {@link Minecraft}
-         * @param matrixStack Instance of {@link MatrixStack}
-         * @param x X position
-         * @param y Y position
-         */
-        public abstract void render(Minecraft mc, MatrixStack matrixStack, int x, int y);
-
-        /**
-         * @return Width of the embed
-         */
-        public abstract int getWidth();
-
-        /**
-         * @return Instance of {@link Embed}
-         */
-        public abstract Embed getEmbed();
     }
 }

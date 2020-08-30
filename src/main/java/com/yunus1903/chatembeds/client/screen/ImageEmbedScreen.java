@@ -1,9 +1,9 @@
-package com.yunus1903.chatembeds.client;
+package com.yunus1903.chatembeds.client.screen;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.yunus1903.chatembeds.client.embed.ImageEmbed;
 import net.minecraft.client.gui.AbstractGui;
-import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.screen.ChatScreen;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.*;
@@ -13,23 +13,16 @@ import net.minecraft.util.text.event.ClickEvent;
  * @author Yunus1903
  * @since 11/08/2020
  */
-public class ImageEmbedScreen extends Screen
+public class ImageEmbedScreen extends EmbedScreen<ImageEmbed>
 {
-    private final Screen parent;
-    private final int scrollPos;
-    private final ImageEmbed embed;
-
     private int imageWidth, imageHeight;
 
     private ResourceLocation imageResourceLocation;
     private IFormattableTextComponent openImage;
 
-    public ImageEmbedScreen(Screen parent, int scrollPos, ImageEmbed embed)
+    public ImageEmbedScreen(ChatScreen parent, int scrollPos, ImageEmbed embed)
     {
-        super(new StringTextComponent("Embed image"));
-        this.parent = parent;
-        this.scrollPos = scrollPos;
-        this.embed = embed;
+        super(parent, scrollPos, embed);
     }
 
     @Override
@@ -61,7 +54,7 @@ public class ImageEmbedScreen extends Screen
     @Override
     public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks)
     {
-        renderBackground(matrixStack);
+        super.render(matrixStack, mouseX, mouseY, partialTicks);
 
         minecraft.getTextureManager().bindTexture(imageResourceLocation);
         AbstractGui.blit(matrixStack, (width - imageWidth) / 2, (height - imageHeight) / 2, 0, 0, imageWidth, imageHeight, imageWidth, imageHeight);
@@ -86,13 +79,6 @@ public class ImageEmbedScreen extends Screen
             return true;
         }
         return super.mouseClicked(mouseX, mouseY, p_231044_5_);
-    }
-
-    @Override
-    public void closeScreen()
-    {
-        minecraft.displayGuiScreen(parent);
-        minecraft.ingameGUI.getChatGUI().scrollPos = scrollPos;
     }
 
     /**
