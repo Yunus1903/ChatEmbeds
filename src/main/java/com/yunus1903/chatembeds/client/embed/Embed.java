@@ -88,33 +88,18 @@ public abstract class Embed
      */
     public static class Builder
     {
-        private final URL url;
+        private final String url;
         private final int ticks, chatLineId;
 
         /**
          * Builder constructor
-         * @param url {@link URL} source of the embed
+         * @param url Source of the embed as a String
          * @param ticks Minecraft ticks
          * @param chatLineId ID of the chat line
          */
         public Builder(String url, int ticks, int chatLineId)
         {
-            URL url1 = null;
-            try
-            {
-                if (new URI(url).getScheme() == null)
-                {
-                    url = "http://" + url;
-                }
-
-                url1 = new URL(url);
-            }
-            catch (MalformedURLException | URISyntaxException e)
-            {
-                ChatEmbeds.LOGGER.error("Failed to parse URL", e);
-            }
-
-            this.url = url1;
+            this.url = url;
             this.ticks = ticks;
             this.chatLineId = chatLineId;
         }
@@ -126,21 +111,49 @@ public abstract class Embed
         @Nullable
         public Embed build()
         {
-            String extension = url.toString().substring(url.toString().lastIndexOf(".") + 1);
+            URL parsedURL = parseURL(url);
+            if (parsedURL == null) return null;
+
+            String extension = parsedURL.toString().substring(parsedURL.toString().lastIndexOf(".") + 1);
             if (extension.contains("?")) extension = extension.substring(0, extension.indexOf("?"));
 
             if (extension.equals("png") || extension.equals("jpg") || extension.equals("jpeg"))
             {
                 if (ChatEmbedsConfig.GeneralConfig.enableImageEmbeds)
-                    return new ImageEmbed(url, ticks, chatLineId);
+                    return new ImageEmbed(parsedURL, ticks, chatLineId);
             }
             else if (extension.equals("gif"))
             {
                 if (ChatEmbedsConfig.GeneralConfig.enableAnimatedImageEmbeds)
-                    return new AnimatedImageEmbed(url, ticks, chatLineId);
+                    return new AnimatedImageEmbed(parsedURL, ticks, chatLineId);
             }
-            else if (ChatEmbedsConfig.GeneralConfig.enableTextEmbeds) return new TextEmbed(url, ticks, chatLineId);
+            else if (ChatEmbedsConfig.GeneralConfig.enableTextEmbeds) return new TextEmbed(parsedURL, ticks, chatLineId);
             return null;
+        }
+
+        /**
+         * Parse string into {@link URL}
+         * @param url URL as a string
+         * @return Parsed {@link URL}
+         */
+        @Nullable
+        private static URL parseURL(String url)
+        {
+            URL parsedURL = null;
+            try
+            {
+                if (new URI(url).getScheme() == null)
+                {
+                    url = "http://" + url;
+                }
+
+                parsedURL = new URL(url);
+            }
+            catch (MalformedURLException | URISyntaxException e)
+            {
+                ChatEmbeds.LOGGER.error("Failed to parse URL", e);
+            }
+            return parsedURL;
         }
     }
 }
