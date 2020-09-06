@@ -3,6 +3,7 @@ package com.yunus1903.chatembeds.client;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.yunus1903.chatembeds.ChatEmbeds;
 import com.yunus1903.chatembeds.client.embed.AnimatedImageEmbed;
 import com.yunus1903.chatembeds.client.embed.Embed;
 import com.yunus1903.chatembeds.client.embed.ImageEmbed;
@@ -171,7 +172,7 @@ public class EmbeddedChatGui extends NewChatGui
 
         if (matcher.find())
         {
-            new Thread("Embed loader")
+            Thread embedLoader = new Thread("Embed loader")
             {
                 @Override
                 public void run()
@@ -184,7 +185,9 @@ public class EmbeddedChatGui extends NewChatGui
                     index = 0;
                     doIndex = false;
                 }
-            }.start();
+            };
+            embedLoader.setUncaughtExceptionHandler((t, e) -> ChatEmbeds.LOGGER.error("Unhandled exception", e));
+            embedLoader.start();
         }
 
         while(this.drawnChatLines.size() > 100)
