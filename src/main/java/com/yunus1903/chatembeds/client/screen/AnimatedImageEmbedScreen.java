@@ -11,6 +11,7 @@ import net.minecraft.util.text.event.ClickEvent;
  * @author Yunus1903
  * @since 30/08/2020
  */
+@SuppressWarnings("DuplicatedCode")
 public class AnimatedImageEmbedScreen extends EmbedScreen<AnimatedImageEmbed>
 {
     private int imageWidth, imageHeight;
@@ -53,6 +54,7 @@ public class AnimatedImageEmbedScreen extends EmbedScreen<AnimatedImageEmbed>
     @Override
     public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks)
     {
+        if (minecraft == null) return;
         super.render(matrixStack, mouseX, mouseY, partialTicks);
 
         final int frameIndex = minecraft.frameTimer.getIndex();
@@ -71,7 +73,7 @@ public class AnimatedImageEmbedScreen extends EmbedScreen<AnimatedImageEmbed>
         }
 
         minecraft.getTextureManager().bindTexture(embed.getFrameResourceLocations().get(currentFrame));
-        AbstractGui.blit(matrixStack,  (width - imageWidth) / 2, (height - imageHeight) / 2, 0, 0, imageWidth, imageHeight, imageWidth, imageHeight);
+        AbstractGui.blit(matrixStack, (width - imageWidth) / 2, (height - imageHeight) / 2, 0, 0, imageWidth, imageHeight, imageWidth, imageHeight);
 
         if (mouseOverImage(mouseX, mouseY)) openImage.mergeStyle(TextFormatting.UNDERLINE);
         else
@@ -103,10 +105,6 @@ public class AnimatedImageEmbedScreen extends EmbedScreen<AnimatedImageEmbed>
      */
     private boolean mouseOverImage(double mouseX, double mouseY)
     {
-        if (mouseX >= ((width - imageWidth) >> 1) && mouseX <= ((width - imageWidth) >> 1) + minecraft.fontRenderer.getStringWidth(openImage.getString()) && mouseY >= ((height - imageHeight) >> 1) + imageHeight + 5 && mouseY <= ((height - imageHeight) >> 1) + imageHeight + 5 + minecraft.fontRenderer.FONT_HEIGHT)
-        {
-            return true;
-        }
-        return false;
+        return minecraft != null && mouseX >= ((width - imageWidth) >> 1) && mouseX <= ((width - imageWidth) >> 1) + minecraft.fontRenderer.getStringWidth(openImage.getString()) && mouseY >= ((height - imageHeight) >> 1) + imageHeight + 5 && mouseY <= ((height - imageHeight) >> 1) + imageHeight + 5 + minecraft.fontRenderer.FONT_HEIGHT;
     }
 }

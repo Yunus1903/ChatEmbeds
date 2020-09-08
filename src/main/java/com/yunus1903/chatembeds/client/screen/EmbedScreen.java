@@ -40,6 +40,7 @@ public abstract class EmbedScreen<T extends Embed> extends Screen
     @Override
     public void closeScreen()
     {
+        if (minecraft == null) return;
         minecraft.displayGuiScreen(parent);
         minecraft.ingameGUI.getChatGUI().scrollPos = scrollPos;
     }

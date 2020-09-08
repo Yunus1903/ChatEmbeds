@@ -14,6 +14,7 @@ import net.minecraft.client.gui.ChatLine;
 import net.minecraft.client.gui.NewChatGui;
 import net.minecraft.client.gui.RenderComponentsUtil;
 import net.minecraft.client.gui.screen.ChatScreen;
+import net.minecraft.util.DefaultUncaughtExceptionHandler;
 import net.minecraft.util.IReorderingProcessor;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.ITextComponent;
@@ -89,7 +90,7 @@ public class EmbeddedChatGui extends NewChatGui
                                 double d6 = (double)(-i1) * d3;
                                 matrixStack.push();
                                 matrixStack.translate(0.0D, 0.0D, 50.0D);
-                                fill(matrixStack, -2, (int)(d6 - d3), 0 + k + 4, (int)d6, i2 << 24);
+                                fill(matrixStack, -2, (int)(d6 - d3), k + 4, (int)d6, i2 << 24);
                                 RenderSystem.enableBlend();
                                 matrixStack.translate(0.0D, 0.0D, 50.0D);
                                 if (chatline instanceof EmbedChatLine)
@@ -187,11 +188,16 @@ public class EmbeddedChatGui extends NewChatGui
                     doIndex = false;
                 }
             };
-            embedLoader.setUncaughtExceptionHandler((t, e) ->
+            embedLoader.setDaemon(true);
+            embedLoader.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(ChatEmbeds.LOGGER)
             {
-                ChatEmbeds.LOGGER.error("Unhandled exception", e);
-                index = 0;
-                doIndex = false;
+                @Override
+                public void uncaughtException(Thread p_uncaughtException_1_, Throwable p_uncaughtException_2_)
+                {
+                    super.uncaughtException(p_uncaughtException_1_, p_uncaughtException_2_);
+                    index = 0;
+                    doIndex = false;
+                }
             });
             embedLoader.start();
         }
@@ -245,8 +251,8 @@ public class EmbeddedChatGui extends NewChatGui
         {
             double d0 = mouseX - 2.0D;
             double d1 = (double)this.mc.getMainWindow().getScaledHeight() - mouseY - 40.0D;
-            d0 = (double)MathHelper.floor(d0 / this.getScale());
-            d1 = (double)MathHelper.floor(d1 / (this.getScale() * (this.mc.gameSettings.field_238331_l_ + 1.0D)));
+            d0 = MathHelper.floor(d0 / this.getScale());
+            d1 = MathHelper.floor(d1 / (this.getScale() * (this.mc.gameSettings.field_238331_l_ + 1.0D)));
             if (!(d0 < 0.0D) && !(d1 < 0.0D))
             {
                 int i = Math.min(this.getLineCount(), this.drawnChatLines.size());

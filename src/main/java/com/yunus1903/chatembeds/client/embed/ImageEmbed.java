@@ -24,6 +24,7 @@ import java.util.List;
  * @author Yunus1903
  * @since 29/08/2020
  */
+@SuppressWarnings("DuplicatedCode")
 public class ImageEmbed extends Embed
 {
     private NativeImage image, scaledImage;

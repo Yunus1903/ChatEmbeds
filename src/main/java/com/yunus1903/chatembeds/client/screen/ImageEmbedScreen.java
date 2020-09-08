@@ -13,6 +13,7 @@ import net.minecraft.util.text.event.ClickEvent;
  * @author Yunus1903
  * @since 11/08/2020
  */
+@SuppressWarnings("DuplicatedCode")
 public class ImageEmbedScreen extends EmbedScreen<ImageEmbed>
 {
     private int imageWidth, imageHeight;
@@ -28,6 +29,7 @@ public class ImageEmbedScreen extends EmbedScreen<ImageEmbed>
     @Override
     protected void init()
     {
+        if (minecraft == null) return;
         imageResourceLocation = minecraft.getTextureManager().getDynamicTextureLocation("embed_fullscreen_image", new DynamicTexture(embed.getImage()));
 
         imageWidth = embed.getImage().getWidth();
@@ -54,6 +56,7 @@ public class ImageEmbedScreen extends EmbedScreen<ImageEmbed>
     @Override
     public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks)
     {
+        if (minecraft == null) return;
         super.render(matrixStack, mouseX, mouseY, partialTicks);
 
         minecraft.getTextureManager().bindTexture(imageResourceLocation);
@@ -89,10 +92,6 @@ public class ImageEmbedScreen extends EmbedScreen<ImageEmbed>
      */
     private boolean mouseOverImage(double mouseX, double mouseY)
     {
-        if (mouseX >= ((width - imageWidth) >> 1) && mouseX <= ((width - imageWidth) >> 1) + minecraft.fontRenderer.getStringWidth(openImage.getString()) && mouseY >= ((height - imageHeight) >> 1) + imageHeight + 5 && mouseY <= ((height - imageHeight) >> 1) + imageHeight + 5 + minecraft.fontRenderer.FONT_HEIGHT)
-        {
-            return true;
-        }
-        return false;
+        return minecraft != null && mouseX >= ((width - imageWidth) >> 1) && mouseX <= ((width - imageWidth) >> 1) + minecraft.fontRenderer.getStringWidth(openImage.getString()) && mouseY >= ((height - imageHeight) >> 1) + imageHeight + 5 && mouseY <= ((height - imageHeight) >> 1) + imageHeight + 5 + minecraft.fontRenderer.FONT_HEIGHT;
     }
 }
