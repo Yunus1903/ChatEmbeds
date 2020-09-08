@@ -58,7 +58,7 @@ public class ChatEmbedsConfig
 
             ENABLE_ANIMATED_IMAGE_EMBEDS = builder
                     .comment("Enable animated image embeds (gif)")
-                    .define("enableImageEmbeds", true);
+                    .define("enableAnimatedImageEmbeds", true);
 
             ENABLE_TEXT_EMBEDS = builder
                     .comment("Enable text embeds (Work in progress)")

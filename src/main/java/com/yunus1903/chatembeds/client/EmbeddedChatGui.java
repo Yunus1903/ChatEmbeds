@@ -43,6 +43,7 @@ public class EmbeddedChatGui extends NewChatGui
         this.mc = mcIn;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void func_238492_a_(MatrixStack matrixStack, int ticks)
     {
@@ -186,7 +187,12 @@ public class EmbeddedChatGui extends NewChatGui
                     doIndex = false;
                 }
             };
-            embedLoader.setUncaughtExceptionHandler((t, e) -> ChatEmbeds.LOGGER.error("Unhandled exception", e));
+            embedLoader.setUncaughtExceptionHandler((t, e) ->
+            {
+                ChatEmbeds.LOGGER.error("Unhandled exception", e);
+                index = 0;
+                doIndex = false;
+            });
             embedLoader.start();
         }
 

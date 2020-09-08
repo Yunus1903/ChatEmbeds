@@ -117,17 +117,29 @@ public abstract class Embed
             String extension = parsedURL.toString().substring(parsedURL.toString().lastIndexOf(".") + 1);
             if (extension.contains("?")) extension = extension.substring(0, extension.indexOf("?"));
 
-            if (extension.equals("png") || extension.equals("jpg") || extension.equals("jpeg"))
+            try
             {
-                if (ChatEmbedsConfig.GeneralConfig.enableImageEmbeds)
-                    return new ImageEmbed(parsedURL, ticks, chatLineId);
+                String imageURL = ImageExtractor.extractImageURL(parsedURL);
+                if (imageURL != null)
+                {
+                    parsedURL = new URL(imageURL);
+                    ChatEmbeds.LOGGER.debug(parsedURL);
+                    if (extension.equals("gif") || extension.equals("gifv"))
+                    {
+                        if (ChatEmbedsConfig.GeneralConfig.enableAnimatedImageEmbeds)
+                            return new AnimatedImageEmbed(parsedURL, ticks, chatLineId);
+                    }
+                    else if (ChatEmbedsConfig.GeneralConfig.enableImageEmbeds)
+                        return new ImageEmbed(parsedURL, ticks, chatLineId);
+                }
             }
-            else if (extension.equals("gif"))
+            catch (MalformedURLException e)
             {
-                if (ChatEmbedsConfig.GeneralConfig.enableAnimatedImageEmbeds)
-                    return new AnimatedImageEmbed(parsedURL, ticks, chatLineId);
+                ChatEmbeds.LOGGER.debug("Failed to recreate URL", e);
             }
-            else if (ChatEmbedsConfig.GeneralConfig.enableTextEmbeds) return new TextEmbed(parsedURL, ticks, chatLineId);
+            catch (IOException ignored) { }
+
+            if (ChatEmbedsConfig.GeneralConfig.enableTextEmbeds) return new TextEmbed(parsedURL, ticks, chatLineId);
             return null;
         }
 
