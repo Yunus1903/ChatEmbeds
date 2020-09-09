@@ -1,5 +1,7 @@
 package com.yunus1903.chatembeds.client.embed;
 
+import at.dhyan.open_imaging.GifDecoder;
+import com.google.common.io.ByteStreams;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.yunus1903.chatembeds.ChatEmbeds;
 import com.yunus1903.chatembeds.ChatEmbedsConfig;
@@ -15,15 +17,8 @@ import net.minecraft.util.text.LanguageMap;
 import net.minecraft.util.text.StringTextComponent;
 
 import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
-import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.metadata.IIOMetadataNode;
-import javax.imageio.stream.ImageInputStream;
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,7 +28,7 @@ import java.util.List;
  * @author Yunus1903
  * @since 29/08/2020
  */
-@SuppressWarnings("DuplicatedCode")
+@SuppressWarnings({"DuplicatedCode", "UnstableApiUsage"})
 public class AnimatedImageEmbed extends Embed
 {
     private List<NativeImage> frames;
@@ -125,21 +120,30 @@ public class AnimatedImageEmbed extends Embed
 
     private boolean loadImage()
     {
-        ImageReader reader = ImageIO.getImageReadersByFormatName("gif").next();
-        ImageInputStream inputStream = null;
+        GifDecoder.GifImage image = null;
+
         try
         {
             if (connection == null) return false;
-            inputStream = ImageIO.createImageInputStream(connection.getInputStream());
+
+            final ByteArrayOutputStream outputStream = new ByteArrayOutputStream()
+            {
+                @Override
+                public synchronized byte[] toByteArray()
+                {
+                    return this.buf;
+                }
+            };
+
+            ByteStreams.copy(connection.getInputStream(), outputStream);
+            image = GifDecoder.read(new ByteArrayInputStream(outputStream.toByteArray(), 0, outputStream.size()));
         }
         catch (IOException e)
         {
-            ChatEmbeds.LOGGER.error("Exception creating image InputStream", e);
+            ChatEmbeds.LOGGER.error("Exception getting image from InputStream", e);
         }
 
-        if (inputStream == null) return false;
-
-        reader.setInput(inputStream, false);
+        if (image == null) return false;
 
         if (frames == null) frames = new ArrayList<>();
         if (scaledFrames == null) scaledFrames = new ArrayList<>();
@@ -148,45 +152,20 @@ public class AnimatedImageEmbed extends Embed
 
         try
         {
-            int numberOfFrames = reader.getNumImages(true);
+            int numberOfFrames = image.getFrameCount();
             if (numberOfFrames == 0) return false;
 
-            IIOMetadata metadata =  reader.getImageMetadata(0);
-            String metaFormatName = metadata.getNativeMetadataFormatName();
-
-            List<ImageFrame> imageFrames = new ArrayList<>();
-
-            for (int i = 0; i < numberOfFrames; i++)
+            for (int i = 0; i < image.getFrameCount(); i++)
             {
-                IIOMetadataNode root = (IIOMetadataNode) reader.getImageMetadata(i).getAsTree(metaFormatName);
-                IIOMetadataNode imageDescriptor = getNode(root, "ImageDescriptor");
-                IIOMetadataNode graphicControlExtension = getNode(root, "GraphicControlExtension");
-
-                imageFrames.add(new ImageFrame(reader.read(i),
-                        Integer.parseInt(imageDescriptor.getAttribute("imageLeftPosition")),
-                        Integer.parseInt(imageDescriptor.getAttribute("imageTopPosition")),
-                        Integer.parseInt(graphicControlExtension.getAttribute("delayTime"))));
-            }
-
-            for (int i = 0; i < imageFrames.size(); i++)
-            {
-                BufferedImage bufferedImage = new BufferedImage(imageFrames.get(0).width, imageFrames.get(0).height, BufferedImage.TYPE_INT_ARGB);
-                Graphics2D graphics = bufferedImage.createGraphics();
-                for (int j = 0; j <= i; j++)
-                {
-                    ImageFrame frame = imageFrames.get(j);
-                    graphics.drawImage(frame.image, frame.left, frame.top, frame.width, frame.height, null);
-                }
-                graphics.dispose();
                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                ImageIO.write(bufferedImage, "gif", outputStream);
-                NativeImage image = NativeImage.read(new ByteArrayInputStream(outputStream.toByteArray()));
+                ImageIO.write(image.getFrame(i), "gif", outputStream);
+                NativeImage nativeImage = NativeImage.read(new ByteArrayInputStream(outputStream.toByteArray()));
 
-                frames.add(image);
-                scaledFrames.add(ImageEmbed.scaleImage(image, ChatEmbedsConfig.GeneralConfig.chatImageEmbedMaxWidth, ChatEmbedsConfig.GeneralConfig.chatImageEmbedMaxHeight));
+                frames.add(nativeImage);
+                scaledFrames.add(ImageEmbed.scaleImage(nativeImage, ChatEmbedsConfig.GeneralConfig.chatImageEmbedMaxWidth, ChatEmbedsConfig.GeneralConfig.chatImageEmbedMaxHeight));
                 frameResourceLocations.add(Minecraft.getInstance().getTextureManager()
-                        .getDynamicTextureLocation("chat_embed_animated_image_frame_" + i, new DynamicTexture(image)));
-                frameDelays.add(imageFrames.get(i).delay);
+                        .getDynamicTextureLocation("chat_embed_animated_image_frame_" + i, new DynamicTexture(nativeImage)));
+                frameDelays.add(image.getDelay(i));
             }
         }
         catch (IOException e)
@@ -227,21 +206,5 @@ public class AnimatedImageEmbed extends Embed
     public List<Integer> getFrameDelays()
     {
         return frameDelays;
-    }
-
-    private static class ImageFrame
-    {
-        protected final BufferedImage image;
-        protected final int width, height, left, top, delay;
-
-        private ImageFrame(BufferedImage image, int left, int top, int delay)
-        {
-            this.image = image;
-            this.width = image.getWidth();
-            this.height = image.getHeight();
-            this.left = left;
-            this.top = top;
-            this.delay = delay;
-        }
     }
 }
