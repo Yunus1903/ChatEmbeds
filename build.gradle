@@ -13,6 +13,7 @@ buildscript {
 
 plugins {
     id "com.matthewprenger.cursegradle" version '1.4.0'
+    id "com.github.johnrengelman.shadow" version '1.2.4'
 }
 
 apply plugin: 'net.minecraftforge.gradle'
@@ -25,6 +26,7 @@ archivesBaseName = "${mod_name}-${minecraft_version}"
 sourceCompatibility = targetCompatibility = JavaVersion.VERSION_1_8
 
 repositories {
+    mavenCentral()
 }
 
 sourceSets {
@@ -57,6 +59,8 @@ minecraft {
 
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+
+    compile "org.jsoup:jsoup:${jsoup_version}"
 }
 
 def toml_properties = [
@@ -82,6 +86,39 @@ processResources {
     }
 }
 
+jar {
+    classifier = 'slim'
+}
+
+shadowJar {
+    dependencies {
+        include dependency("org.jsoup:jsoup:${jsoup_version}")
+    }
+
+    exclude('META-INF/maven/**')
+    exclude('META-INF/CHANGES')
+    exclude('META-INF/LICENSE')
+    exclude('META-INF/README.md')
+
+    classifier = ''
+
+    manifest {
+        attributes([
+                "Specification-Title": "${mod_name}",
+                "Specification-Vendor": "Yunus1903",
+                "Specification-Version": "1",
+                "Implementation-Title": project.name,
+                "Implementation-Version": "${version}",
+                "Implementation-Vendor" : "Yunus1903",
+                "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+        ])
+    }
+}
+
+reobf {
+    shadowJar { }
+}
+
 task sourcesJar(type: Jar, dependsOn: classes) {
     classifier = 'sources'
     from sourceSets.main.allSource
@@ -99,22 +136,11 @@ task sourcesJar(type: Jar, dependsOn: classes) {
 }
 
 artifacts {
+    archives shadowJar
     archives sourcesJar
 }
 
-jar {
-    manifest {
-        attributes([
-            "Specification-Title": "${mod_name}",
-            "Specification-Vendor": "Yunus1903",
-            "Specification-Version": "1",
-            "Implementation-Title": project.name,
-            "Implementation-Version": "${version}",
-            "Implementation-Vendor" : "Yunus1903",
-            "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
-        ])
-    }
-}
+tasks.build.dependsOn reobfShadowJar
 
 task generateChangelog(type: GitChangelogTask) {
     file = new File("changelog.html")
@@ -132,7 +158,8 @@ if (System.getenv("CURSEFORGE_KEY") != null || project.hasProperty('curseforgeKe
             releaseType = curseforge_release_type
             changelogType = "html"
             changelog = file("changelog.html")
-            mainArtifact jar
+            mainArtifact shadowJar
+            addArtifact jar
             addArtifact sourcesJar
         }
         options {

@@ -3,10 +3,18 @@ package com.yunus1903.chatembeds.client;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.yunus1903.chatembeds.ChatEmbeds;
+import com.yunus1903.chatembeds.client.embed.AnimatedImageEmbed;
+import com.yunus1903.chatembeds.client.embed.Embed;
+import com.yunus1903.chatembeds.client.embed.ImageEmbed;
+import com.yunus1903.chatembeds.client.screen.AnimatedImageEmbedScreen;
+import com.yunus1903.chatembeds.client.screen.ImageEmbedScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ChatLine;
 import net.minecraft.client.gui.NewChatGui;
 import net.minecraft.client.gui.RenderComponentsUtil;
+import net.minecraft.client.gui.screen.ChatScreen;
+import net.minecraft.util.DefaultUncaughtExceptionHandler;
 import net.minecraft.util.IReorderingProcessor;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.ITextComponent;
@@ -36,6 +44,7 @@ public class EmbeddedChatGui extends NewChatGui
         this.mc = mcIn;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void func_238492_a_(MatrixStack matrixStack, int ticks)
     {
@@ -81,12 +90,12 @@ public class EmbeddedChatGui extends NewChatGui
                                 double d6 = (double)(-i1) * d3;
                                 matrixStack.push();
                                 matrixStack.translate(0.0D, 0.0D, 50.0D);
-                                fill(matrixStack, -2, (int)(d6 - d3), 0 + k + 4, (int)d6, i2 << 24);
+                                fill(matrixStack, -2, (int)(d6 - d3), k + 4, (int)d6, i2 << 24);
                                 RenderSystem.enableBlend();
                                 matrixStack.translate(0.0D, 0.0D, 50.0D);
-                                if (chatline instanceof Embed.ImageChatLine)
+                                if (chatline instanceof EmbedChatLine)
                                 {
-                                    ((Embed.ImageChatLine) chatline).render(mc, matrixStack, 3, ((int)(d6 + d4)));
+                                    ((EmbedChatLine<?>) chatline).render(mc, matrixStack, 3, ((int)(d6 + d4)));
                                 }
                                 else
                                 {
@@ -165,18 +174,32 @@ public class EmbeddedChatGui extends NewChatGui
 
         if (matcher.find())
         {
-            new Thread("embed_loader")
+            Thread embedLoader = new Thread("Embed loader")
             {
                 @Override
                 public void run()
                 {
                     doIndex = true;
-                    Embed embed = new Embed(matcher.group());
-                    drawnChatLines.addAll(index, Lists.reverse(embed.getLines(ticks, chatLineId)));
+
+                    Embed embed = new Embed.Builder(matcher.group(), ticks, chatLineId).build();
+                    if (embed != null) drawnChatLines.addAll(index, Lists.reverse(embed.getChatLines()));
+
                     index = 0;
                     doIndex = false;
                 }
-            }.start();
+            };
+            embedLoader.setDaemon(true);
+            embedLoader.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(ChatEmbeds.LOGGER)
+            {
+                @Override
+                public void uncaughtException(Thread p_uncaughtException_1_, Throwable p_uncaughtException_2_)
+                {
+                    super.uncaughtException(p_uncaughtException_1_, p_uncaughtException_2_);
+                    index = 0;
+                    doIndex = false;
+                }
+            });
+            embedLoader.start();
         }
 
         while(this.drawnChatLines.size() > 100)
@@ -198,30 +221,38 @@ public class EmbeddedChatGui extends NewChatGui
     @Override
     public boolean func_238491_a_(double mouseX, double mouseY)
     {
-        Embed.ImageChatLine chatLine = getImageChatLine(mouseX, mouseY);
-        if (chatLine != null)
+        Embed embed = getEmbed(mouseX, mouseY);
+        if (mc.currentScreen instanceof ChatScreen)
         {
-            Minecraft.getInstance().displayGuiScreen(new EmbedImageScreen(mc.currentScreen, this.scrollPos, chatLine.getOriginalImage(), chatLine.getUrl()));
-            return true;
+            if (embed instanceof AnimatedImageEmbed)
+            {
+                Minecraft.getInstance().displayGuiScreen(new AnimatedImageEmbedScreen((ChatScreen) mc.currentScreen, this.scrollPos, (AnimatedImageEmbed) embed));
+                return true;
+            }
+            if (embed instanceof ImageEmbed)
+            {
+                Minecraft.getInstance().displayGuiScreen(new ImageEmbedScreen((ChatScreen) mc.currentScreen, this.scrollPos, (ImageEmbed) embed));
+                return true;
+            }
         }
         return super.func_238491_a_(mouseX, mouseY);
     }
 
     /**
-     * Gets {@link Embed.ImageChatLine ImageChatLine} from mouse position
-     * @param mouseX Mouse X position
-     * @param mouseY Mouse Y position
-     * @return {@link Embed.ImageChatLine} instance
+     * Gets {@link Embed embed} from mouse position
+     * @param mouseX mouseX Mouse X position
+     * @param mouseY mouseY Mouse Y position
+     * @return {@link Embed} instance
      */
     @Nullable
-    private Embed.ImageChatLine getImageChatLine(double mouseX, double mouseY)
+    private Embed getEmbed(double mouseX, double mouseY)
     {
         if (this.getChatOpen() && !this.mc.gameSettings.hideGUI && !this.func_238496_i_())
         {
             double d0 = mouseX - 2.0D;
             double d1 = (double)this.mc.getMainWindow().getScaledHeight() - mouseY - 40.0D;
-            d0 = (double)MathHelper.floor(d0 / this.getScale());
-            d1 = (double)MathHelper.floor(d1 / (this.getScale() * (this.mc.gameSettings.field_238331_l_ + 1.0D)));
+            d0 = MathHelper.floor(d0 / this.getScale());
+            d1 = MathHelper.floor(d1 / (this.getScale() * (this.mc.gameSettings.field_238331_l_ + 1.0D)));
             if (!(d0 < 0.0D) && !(d1 < 0.0D))
             {
                 int i = Math.min(this.getLineCount(), this.drawnChatLines.size());
@@ -230,12 +261,12 @@ public class EmbeddedChatGui extends NewChatGui
                     int j = (int)(d1 / 9.0D + (double)this.scrollPos);
                     if (j >= 0 && j < this.drawnChatLines.size())
                     {
-                        ChatLine<?> chatLine = this.drawnChatLines.get(j);
-                        if (chatLine instanceof Embed.ImageChatLine)
+                        ChatLine<IReorderingProcessor> chatLine = this.drawnChatLines.get(j);
+                        if (chatLine instanceof EmbedChatLine)
                         {
-                            if (d0 - 3 <= ((Embed.ImageChatLine) chatLine).getImage().getWidth())
+                            if (d0 - 3 <= ((EmbedChatLine<?>) chatLine).getWidth())
                             {
-                                return (Embed.ImageChatLine) chatLine;
+                                return ((EmbedChatLine<?>) chatLine).getEmbed();
                             }
                         }
                     }
