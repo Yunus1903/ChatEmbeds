@@ -39,6 +39,34 @@ minecraft {
     accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
 
     runs {
+        if (findProject(':Workspace') == null) {
+            client {
+                workingDirectory project.file('run')
+
+                property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+                property 'forge.logging.console.level', 'debug'
+
+                mods {
+                    chatembeds {
+                        source sourceSets.main
+                    }
+                }
+            }
+
+            server {
+                workingDirectory project.file('run')
+
+                property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+                property 'forge.logging.console.level', 'debug'
+
+                mods {
+                    chatembeds {
+                        source sourceSets.main
+                    }
+                }
+            }
+        }
+
         data {
             workingDirectory project.file('run')
 

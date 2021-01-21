@@ -68,8 +68,8 @@ public class EmbeddedChatGui extends NewChatGui
                 RenderSystem.scaled(d0, d0, 1.0D);
                 double d1 = this.mc.gameSettings.chatOpacity * (double)0.9F + (double)0.1F;
                 double d2 = this.mc.gameSettings.accessibilityTextBackgroundOpacity;
-                double d3 = 9.0D * (this.mc.gameSettings.field_238331_l_ + 1.0D);
-                double d4 = -8.0D * (this.mc.gameSettings.field_238331_l_ + 1.0D) + 4.0D * this.mc.gameSettings.field_238331_l_;
+                double d3 = 9.0D * (this.mc.gameSettings.chatLineSpacing + 1.0D);
+                double d4 = -8.0D * (this.mc.gameSettings.chatLineSpacing + 1.0D) + 4.0D * this.mc.gameSettings.chatLineSpacing;
                 int l = 0;
 
                 for(int i1 = 0; i1 + this.scrollPos < this.drawnChatLines.size() && i1 < i; ++i1)
@@ -99,7 +99,7 @@ public class EmbeddedChatGui extends NewChatGui
                                 }
                                 else
                                 {
-                                    this.mc.fontRenderer.func_238407_a_(matrixStack, chatline.func_238169_a_(), 0.0F, (float)((int)(d6 + d4)), 16777215 + (l1 << 24));
+                                    this.mc.fontRenderer.func_238407_a_(matrixStack, chatline.getLineString(), 0.0F, (float)((int)(d6 + d4)), 16777215 + (l1 << 24));
                                 }
                                 RenderSystem.disableAlphaTest();
                                 RenderSystem.disableBlend();
@@ -252,7 +252,7 @@ public class EmbeddedChatGui extends NewChatGui
             double d0 = mouseX - 2.0D;
             double d1 = (double)this.mc.getMainWindow().getScaledHeight() - mouseY - 40.0D;
             d0 = MathHelper.floor(d0 / this.getScale());
-            d1 = MathHelper.floor(d1 / (this.getScale() * (this.mc.gameSettings.field_238331_l_ + 1.0D)));
+            d1 = MathHelper.floor(d1 / (this.getScale() * (this.mc.gameSettings.chatLineSpacing + 1.0D)));
             if (!(d0 < 0.0D) && !(d1 < 0.0D))
             {
                 int i = Math.min(this.getLineCount(), this.drawnChatLines.size());
