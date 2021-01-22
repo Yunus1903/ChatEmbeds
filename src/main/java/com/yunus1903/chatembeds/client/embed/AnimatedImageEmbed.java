@@ -33,7 +33,7 @@ import java.util.List;
 @SuppressWarnings("UnstableApiUsage")
 public class AnimatedImageEmbed extends Embed
 {
-    private final List<Frame> frames = new ArrayList<>();
+    private List<Frame> frames; // TODO: 22/01/2021 Fix final
 
     protected EmbedChatLine<AnimatedImageEmbed> currentRenderer;
     protected int currentFrame;
@@ -46,6 +46,7 @@ public class AnimatedImageEmbed extends Embed
     @Override
     List<? extends ChatLine<IReorderingProcessor>> createChatLines()
     {
+        frames = new ArrayList<>();
         List<ChatLine<IReorderingProcessor>> lines = new ArrayList<>();
         if (!loadImage()) return lines;
 

@@ -1,5 +1,6 @@
 package com.yunus1903.chatembeds.client.embed;
 
+import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -25,11 +26,13 @@ public class ImageExtractor
     @Nullable
     public static String extractImageURL(String url) throws IOException
     {
-        String contentType = new URL(url).openConnection().getContentType();
+        Connection connection = Jsoup.connect(url).ignoreContentType(true);
+        connection.request().method(Connection.Method.GET);
+        Connection.Response response = connection.execute();
+        String contentType = response.contentType();
         if (contentType != null && contentType.startsWith("image/")) return url;
 
-        Document document = Jsoup.connect(url).get();
-
+        Document document = response.parse();
         String imageUrl;
 
         imageUrl = getImageFromSchema(document);

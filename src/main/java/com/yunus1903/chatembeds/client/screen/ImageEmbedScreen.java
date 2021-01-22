@@ -24,6 +24,7 @@ public class ImageEmbedScreen extends AbstractImageEmbedScreen<ImageEmbed>
     protected void init()
     {
         if (minecraft == null) return;
+        super.init();
         super.tick();
         imageResourceLocation = minecraft.getTextureManager()
                 .getDynamicTextureLocation("embed_fullscreen_image", new DynamicTexture(embed.getImage()));
