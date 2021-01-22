@@ -17,10 +17,12 @@ import net.minecraft.util.text.LanguageMap;
 import net.minecraft.util.text.StringTextComponent;
 
 import javax.imageio.ImageIO;
-import javax.imageio.metadata.IIOMetadataNode;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -28,13 +30,10 @@ import java.util.List;
  * @author Yunus1903
  * @since 29/08/2020
  */
-@SuppressWarnings({"DuplicatedCode", "UnstableApiUsage"})
+@SuppressWarnings("UnstableApiUsage")
 public class AnimatedImageEmbed extends Embed
 {
-    private List<NativeImage> frames;
-    private List<NativeImage> scaledFrames;
-    private List<ResourceLocation> frameResourceLocations;
-    private List<Integer> frameDelays;
+    private List<Frame> frames; // TODO: 22/01/2021 Fix final
 
     protected EmbedChatLine<AnimatedImageEmbed> currentRenderer;
     protected int currentFrame;
@@ -47,12 +46,13 @@ public class AnimatedImageEmbed extends Embed
     @Override
     List<? extends ChatLine<IReorderingProcessor>> createChatLines()
     {
+        frames = new ArrayList<>();
         List<ChatLine<IReorderingProcessor>> lines = new ArrayList<>();
         if (!loadImage()) return lines;
 
         lines.add(new ChatLine<>(ticks, LanguageMap.getInstance().func_241870_a(new StringTextComponent("")), chatLineId));
 
-        NativeImage scaledImage = scaledFrames.get(0);
+        NativeImage scaledImage = frames.get(0).getScaledImage();
 
         double imageHeight = scaledImage.getHeight();
         double lineHeight = 9.0D;
@@ -95,7 +95,7 @@ public class AnimatedImageEmbed extends Embed
                             time++;
                         }
 
-                        if (time >= frameDelays.get(currentFrame))
+                        if (time >= frames.get(currentFrame).getDelay())
                         {
                             time = 0;
                             if (currentFrame + 1 >= frames.size()) currentFrame = 0;
@@ -103,7 +103,7 @@ public class AnimatedImageEmbed extends Embed
                         }
                     }
 
-                    mc.getTextureManager().bindTexture(frameResourceLocations.get(currentFrame));
+                    mc.getTextureManager().bindTexture(frames.get(currentFrame).getResourceLocation());
                     AbstractGui.blit(matrixStack, x, y, u0, v0, destWidth, destHeight, textureWidth, textureHeight);
                 }
 
@@ -145,11 +145,6 @@ public class AnimatedImageEmbed extends Embed
 
         if (image == null) return false;
 
-        if (frames == null) frames = new ArrayList<>();
-        if (scaledFrames == null) scaledFrames = new ArrayList<>();
-        if (frameResourceLocations == null) frameResourceLocations = new ArrayList<>();
-        if (frameDelays == null) frameDelays = new ArrayList<>();
-
         try
         {
             int numberOfFrames = image.getFrameCount();
@@ -161,11 +156,10 @@ public class AnimatedImageEmbed extends Embed
                 ImageIO.write(image.getFrame(i), "gif", outputStream);
                 NativeImage nativeImage = NativeImage.read(new ByteArrayInputStream(outputStream.toByteArray()));
 
-                frames.add(nativeImage);
-                scaledFrames.add(ImageEmbed.scaleImage(nativeImage, ChatEmbedsConfig.GeneralConfig.chatImageEmbedMaxWidth, ChatEmbedsConfig.GeneralConfig.chatImageEmbedMaxHeight));
-                frameResourceLocations.add(Minecraft.getInstance().getTextureManager()
-                        .getDynamicTextureLocation("chat_embed_animated_image_frame_" + i, new DynamicTexture(nativeImage)));
-                frameDelays.add(image.getDelay(i));
+                ResourceLocation resourceLocation = Minecraft.getInstance().getTextureManager()
+                        .getDynamicTextureLocation("chat_embed_animated_image_frame_"
+                                + i, new DynamicTexture(nativeImage));
+                frames.add(new Frame(nativeImage, resourceLocation, image.getDelay(i)));
             }
         }
         catch (IOException e)
@@ -173,38 +167,48 @@ public class AnimatedImageEmbed extends Embed
             ChatEmbeds.LOGGER.error("Exception loading animated image", e);
         }
 
-        return !frames.isEmpty() && !scaledFrames.isEmpty() && !frameResourceLocations.isEmpty() && !frameDelays.isEmpty();
+        return !frames.isEmpty();
     }
 
-    private static IIOMetadataNode getNode(IIOMetadataNode root, String nodeName)
+    public List<AnimatedImageEmbed.Frame> getFrames()
     {
-        for (int i = 0; i < root.getLength(); i++)
+        return Collections.unmodifiableList(frames);
+    }
+
+    public static class Frame
+    {
+        private final NativeImage image, scaledImage;
+        private final ResourceLocation resourceLocation;
+        private final int delay;
+
+        private Frame(NativeImage image, ResourceLocation resourceLocation, int delay)
         {
-            if (root.item(i).getNodeName().compareToIgnoreCase(nodeName) == 0)
-                return (IIOMetadataNode) root.item(i);
+            this.image = image;
+            this.scaledImage = ImageEmbed.scaleImage(image,
+                    ChatEmbedsConfig.GeneralConfig.chatImageEmbedMaxWidth,
+                    ChatEmbedsConfig.GeneralConfig.chatImageEmbedMaxHeight);
+            this.resourceLocation = resourceLocation;
+            this.delay = delay;
         }
-        IIOMetadataNode node = new IIOMetadataNode(nodeName);
-        root.appendChild(node);
-        return node;
-    }
 
-    public List<NativeImage> getFrames()
-    {
-        return frames;
-    }
+        public NativeImage getImage()
+        {
+            return image;
+        }
 
-    public List<NativeImage> getScaledFrames()
-    {
-        return scaledFrames;
-    }
+        public NativeImage getScaledImage()
+        {
+            return scaledImage;
+        }
 
-    public List<ResourceLocation> getFrameResourceLocations()
-    {
-        return frameResourceLocations;
-    }
+        public ResourceLocation getResourceLocation()
+        {
+            return resourceLocation;
+        }
 
-    public List<Integer> getFrameDelays()
-    {
-        return frameDelays;
+        public int getDelay()
+        {
+            return delay;
+        }
     }
 }
