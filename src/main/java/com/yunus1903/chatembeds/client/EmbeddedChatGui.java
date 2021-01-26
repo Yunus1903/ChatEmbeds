@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.yunus1903.chatembeds.ChatEmbeds;
+import com.yunus1903.chatembeds.ChatEmbedsConfig;
 import com.yunus1903.chatembeds.client.embed.AnimatedImageEmbed;
 import com.yunus1903.chatembeds.client.embed.Embed;
 import com.yunus1903.chatembeds.client.embed.ImageEmbed;
@@ -182,7 +183,11 @@ public class EmbeddedChatGui extends NewChatGui
                     doIndex = true;
 
                     Embed embed = new Embed.Builder(matcher.group(), ticks, chatLineId).build();
-                    if (embed != null) drawnChatLines.addAll(index, Lists.reverse(embed.getChatLines()));
+                    if (embed != null)
+                    {
+                        if (ChatEmbedsConfig.GeneralConfig.removeUrlMessage) drawnChatLines.remove(index);
+                        drawnChatLines.addAll(index, Lists.reverse(embed.getChatLines()));
+                    }
 
                     index = 0;
                     doIndex = false;
