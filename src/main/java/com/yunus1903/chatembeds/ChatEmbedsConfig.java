@@ -41,12 +41,14 @@ public class ChatEmbedsConfig
         public static boolean enableTextEmbeds;
         public static int chatImageEmbedMaxWidth;
         public static int chatImageEmbedMaxHeight;
+        public static boolean removeUrlMessage;
 
         private final ForgeConfigSpec.BooleanValue ENABLE_IMAGE_EMBEDS;
         private final ForgeConfigSpec.BooleanValue ENABLE_ANIMATED_IMAGE_EMBEDS;
         private final ForgeConfigSpec.BooleanValue ENABLE_TEXT_EMBEDS;
         private final ForgeConfigSpec.IntValue CHAT_IMAGE_EMBED_MAX_WIDTH;
         private final ForgeConfigSpec.IntValue CHAT_IMAGE_EMBED_MAX_HEIGHT;
+        private final ForgeConfigSpec.BooleanValue REMOVE_URL_MESSAGE;
 
         public GeneralConfig(ForgeConfigSpec.Builder builder)
         {
@@ -72,6 +74,10 @@ public class ChatEmbedsConfig
                     .comment("Max height of image embeds")
                     .defineInRange("chatImageEmbedMaxHeight", 100, 0, 320);
 
+            REMOVE_URL_MESSAGE = builder
+                    .comment("Remove the message containing the original url when embedding.")
+                    .define("removeUrlMessage", true);
+
             builder.pop();
         }
 
@@ -82,6 +88,7 @@ public class ChatEmbedsConfig
             enableTextEmbeds = ENABLE_TEXT_EMBEDS.get();
             chatImageEmbedMaxWidth = CHAT_IMAGE_EMBED_MAX_WIDTH.get();
             chatImageEmbedMaxHeight = CHAT_IMAGE_EMBED_MAX_HEIGHT.get();
+            removeUrlMessage = REMOVE_URL_MESSAGE.get();
         }
     }
 }

@@ -123,7 +123,6 @@ public abstract class Embed
                 if (imageURL != null)
                 {
                     parsedURL = new URL(imageURL);
-                    ChatEmbeds.LOGGER.debug(parsedURL);
                     if (extension.equals("gif") || extension.equals("gifv"))
                     {
                         if (ChatEmbedsConfig.GeneralConfig.enableAnimatedImageEmbeds)
