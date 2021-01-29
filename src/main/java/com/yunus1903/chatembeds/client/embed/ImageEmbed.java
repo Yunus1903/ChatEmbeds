@@ -7,6 +7,7 @@ import com.yunus1903.chatembeds.client.EmbedChatLine;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.AbstractGui;
 import net.minecraft.client.gui.ChatLine;
+import net.minecraft.client.gui.NewChatGui;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.renderer.texture.NativeImage;
 import net.minecraft.util.IReorderingProcessor;
@@ -41,7 +42,8 @@ public class ImageEmbed extends Embed
         List<ChatLine<IReorderingProcessor>> lines = new ArrayList<>();
         if (!loadImage()) return lines;
 
-        lines.add(new ChatLine<>(ticks, LanguageMap.getInstance().func_241870_a(new StringTextComponent("")), chatLineId));
+        if (!ChatEmbedsConfig.GeneralConfig.removeUrlMessage)
+            lines.add(new ChatLine<>(ticks, LanguageMap.getInstance().func_241870_a(new StringTextComponent("")), chatLineId));
 
         double imageHeight = scaledImage.getHeight();
         double lineHeight = 9.0D;
@@ -91,7 +93,10 @@ public class ImageEmbed extends Embed
 
         if (image == null) return false;
 
-        scaledImage = scaleImage(image, ChatEmbedsConfig.GeneralConfig.chatImageEmbedMaxWidth, ChatEmbedsConfig.GeneralConfig.chatImageEmbedMaxHeight);
+        NewChatGui gui = Minecraft.getInstance().ingameGUI.persistantChatGUI;
+        scaledImage = scaleImage(image,
+                Math.min(ChatEmbedsConfig.GeneralConfig.chatImageEmbedMaxWidth, gui.getChatWidth()),
+                ChatEmbedsConfig.GeneralConfig.chatImageEmbedMaxHeight);
         imageResourceLocation = Minecraft.getInstance().getTextureManager()
                 .getDynamicTextureLocation("chat_embed_image", new DynamicTexture(image));
 

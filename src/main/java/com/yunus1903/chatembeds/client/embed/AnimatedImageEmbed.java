@@ -9,6 +9,7 @@ import com.yunus1903.chatembeds.client.EmbedChatLine;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.AbstractGui;
 import net.minecraft.client.gui.ChatLine;
+import net.minecraft.client.gui.NewChatGui;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.renderer.texture.NativeImage;
 import net.minecraft.util.IReorderingProcessor;
@@ -50,7 +51,8 @@ public class AnimatedImageEmbed extends Embed
         List<ChatLine<IReorderingProcessor>> lines = new ArrayList<>();
         if (!loadImage()) return lines;
 
-        lines.add(new ChatLine<>(ticks, LanguageMap.getInstance().func_241870_a(new StringTextComponent("")), chatLineId));
+        if (!ChatEmbedsConfig.GeneralConfig.removeUrlMessage)
+            lines.add(new ChatLine<>(ticks, LanguageMap.getInstance().func_241870_a(new StringTextComponent("")), chatLineId));
 
         NativeImage scaledImage = frames.get(0).getScaledImage();
 
@@ -95,7 +97,7 @@ public class AnimatedImageEmbed extends Embed
                             time++;
                         }
 
-                        if (time >= frames.get(currentFrame).getDelay())
+                        if (time >= frames.get(currentFrame).getDelay() / 2)
                         {
                             time = 0;
                             if (currentFrame + 1 >= frames.size()) currentFrame = 0;
@@ -184,8 +186,9 @@ public class AnimatedImageEmbed extends Embed
         private Frame(NativeImage image, ResourceLocation resourceLocation, int delay)
         {
             this.image = image;
+            NewChatGui gui = Minecraft.getInstance().ingameGUI.persistantChatGUI;
             this.scaledImage = ImageEmbed.scaleImage(image,
-                    ChatEmbedsConfig.GeneralConfig.chatImageEmbedMaxWidth,
+                    Math.min(ChatEmbedsConfig.GeneralConfig.chatImageEmbedMaxWidth, gui.getChatWidth()),
                     ChatEmbedsConfig.GeneralConfig.chatImageEmbedMaxHeight);
             this.resourceLocation = resourceLocation;
             this.delay = delay;
