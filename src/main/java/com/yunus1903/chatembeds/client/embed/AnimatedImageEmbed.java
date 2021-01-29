@@ -97,7 +97,7 @@ public class AnimatedImageEmbed extends Embed
                             time++;
                         }
 
-                        if (time >= frames.get(currentFrame).getDelay())
+                        if (time >= frames.get(currentFrame).getDelay() / 2)
                         {
                             time = 0;
                             if (currentFrame + 1 >= frames.size()) currentFrame = 0;

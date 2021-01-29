@@ -90,7 +90,6 @@ public class EmbeddedChatGui extends NewChatGui
                             ++l;
                             if (l1 > 3)
                             {
-                                int j2 = 0;
                                 double d6 = (double) (-i1) * d3;
                                 matrixStack.push();
                                 matrixStack.translate(0.0D, 0.0D, 50.0D);

@@ -34,7 +34,7 @@ public class AnimatedImageEmbedScreen extends AbstractImageEmbedScreen<AnimatedI
             time++;
         }
 
-        if (time >= embed.getFrames().get(currentFrame).getDelay())
+        if (time >= embed.getFrames().get(currentFrame).getDelay() / 2)
         {
             time = 0;
             if (currentFrame + 1 >= embed.getFrames().size()) currentFrame = 0;
