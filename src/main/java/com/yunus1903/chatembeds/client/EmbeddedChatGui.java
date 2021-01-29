@@ -19,12 +19,15 @@ import net.minecraft.util.DefaultUncaughtExceptionHandler;
 import net.minecraft.util.IReorderingProcessor;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.LanguageMap;
+import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * @author Yunus1903
@@ -185,7 +188,13 @@ public class EmbeddedChatGui extends NewChatGui
                     Embed embed = new Embed.Builder(matcher.group(), ticks, chatLineId).build();
                     if (embed != null)
                     {
-                        if (ChatEmbedsConfig.GeneralConfig.removeUrlMessage) drawnChatLines.remove(index);
+                        if (ChatEmbedsConfig.GeneralConfig.removeUrlMessage)
+                            drawnChatLines.removeAll(drawnChatLines.stream()
+                                    .filter(iReorderingProcessorChatLine ->
+                                            list.contains(iReorderingProcessorChatLine.getLineString()))
+                                    .collect(Collectors.toList()));
+                        drawnChatLines.add(index, new ChatLine<>(ticks, LanguageMap.getInstance()
+                                .func_241870_a(new StringTextComponent(chatComponent.getString().split(" ")[0])), chatLineId));
                         drawnChatLines.addAll(index, Lists.reverse(embed.getChatLines()));
                     }
 
