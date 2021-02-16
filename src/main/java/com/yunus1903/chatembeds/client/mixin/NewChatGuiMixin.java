@@ -1,56 +1,101 @@
-package com.yunus1903.chatembeds.client;
+package com.yunus1903.chatembeds.client.mixin;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.yunus1903.chatembeds.ChatEmbeds;
 import com.yunus1903.chatembeds.ChatEmbedsConfig;
-import com.yunus1903.chatembeds.client.embed.AnimatedImageEmbed;
+import com.yunus1903.chatembeds.client.EmbedChatLine;
+import com.yunus1903.chatembeds.client.NewChatGuiUtil;
 import com.yunus1903.chatembeds.client.embed.Embed;
-import com.yunus1903.chatembeds.client.embed.ImageEmbed;
-import com.yunus1903.chatembeds.client.screen.AnimatedImageEmbedScreen;
-import com.yunus1903.chatembeds.client.screen.ImageEmbedScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ChatLine;
 import net.minecraft.client.gui.NewChatGui;
 import net.minecraft.client.gui.RenderComponentsUtil;
-import net.minecraft.client.gui.screen.ChatScreen;
-import net.minecraft.util.DefaultUncaughtExceptionHandler;
 import net.minecraft.util.IReorderingProcessor;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.LanguageMap;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
+import org.spongepowered.asm.mixin.Final;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import javax.annotation.Nullable;
+import java.util.Deque;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static net.minecraft.client.gui.AbstractGui.fill;
+import static net.minecraft.client.gui.NewChatGui.getLineBrightness;
+
 /**
  * @author Yunus1903
- * @since 10/08/2020
+ * @since 01/02/2021
  */
-public class EmbeddedChatGui extends NewChatGui
+@Mixin(NewChatGui.class)
+public abstract class NewChatGuiMixin
 {
     private static final String URL_REGEX = "((https?)://|(www)\\.)?[a-z0-9-]+(\\.[a-z0-9-]+)+([/?].*)?";
-
-    private final Minecraft mc;
 
     private boolean doIndex = false;
     private int index = 0;
 
-    public EmbeddedChatGui(Minecraft mcIn)
-    {
-        super(mcIn);
-        this.mc = mcIn;
-    }
+    @Shadow(remap = false)
+    public abstract boolean func_238496_i_();
+
+    @Shadow(remap = false)
+    public abstract void func_238498_k_();
+
+    @Shadow
+    public abstract int getLineCount();
+
+    @Shadow
+    @Final
+    public List<ChatLine<IReorderingProcessor>> drawnChatLines;
+
+    @Shadow
+    public abstract boolean getChatOpen();
+
+    @Shadow
+    public abstract double getScale();
+
+    @Shadow
+    public abstract int getChatWidth();
+
+    @Shadow
+    public int scrollPos;
+
+    @Shadow
+    @Final
+    private Minecraft mc;
+
+    @Shadow(remap = false)
+    @Final
+    public Deque<ITextComponent> field_238489_i_;
+
+    @Shadow
+    public boolean isScrolled;
+
+    @Shadow
+    public abstract void deleteChatLine(int id);
+
+    @Shadow
+    public abstract void addScrollPos(double posInc);
+
+    @Shadow
+    @Final
+    public List<ChatLine<ITextComponent>> chatLines;
 
     @SuppressWarnings("deprecation")
-    @Override
-    public void func_238492_a_(MatrixStack matrixStack, int ticks)
+    @Inject(method = "func_238492_a_(Lcom/mojang/blaze3d/matrix/MatrixStack;I)V", at = @At("HEAD"), cancellable = true, remap = false)
+    public void func_238492_a_(MatrixStack matrixStack, int ticks, CallbackInfo ci)
     {
         if (!this.func_238496_i_())
         {
@@ -60,10 +105,7 @@ public class EmbeddedChatGui extends NewChatGui
             if (j > 0)
             {
                 boolean flag = false;
-                if (this.getChatOpen())
-                {
-                    flag = true;
-                }
+                if (this.getChatOpen()) flag = true;
 
                 double d0 = this.getScale();
                 int k = MathHelper.ceil((double) this.getChatWidth() / d0);
@@ -97,13 +139,11 @@ public class EmbeddedChatGui extends NewChatGui
                                 RenderSystem.enableBlend();
                                 matrixStack.translate(0.0D, 0.0D, 50.0D);
                                 if (chatline instanceof EmbedChatLine)
-                                {
-                                    ((EmbedChatLine<?>) chatline).render(mc, matrixStack, 3, ((int) (d6 + d4)));
-                                }
+                                    ((EmbedChatLine<?>) chatline)
+                                            .render(mc, matrixStack, 3, ((int) (d6 + d4)));
                                 else
-                                {
-                                    this.mc.fontRenderer.func_238407_a_(matrixStack, chatline.getLineString(), 0.0F, (float) ((int) (d6 + d4)), 16777215 + (l1 << 24));
-                                }
+                                    this.mc.fontRenderer.func_238407_a_(matrixStack, chatline.getLineString(),
+                                            0.0F, (float) ((int) (d6 + d4)), 16777215 + (l1 << 24));
                                 RenderSystem.disableAlphaTest();
                                 RenderSystem.disableBlend();
                                 matrixStack.pop();
@@ -147,17 +187,12 @@ public class EmbeddedChatGui extends NewChatGui
                 RenderSystem.popMatrix();
             }
         }
+
+        ci.cancel();
     }
 
-    @Override
-    public void clearChatMessages(boolean clearSentMsgHistory)
-    {
-        super.clearChatMessages(clearSentMsgHistory);
-        index = 0;
-    }
-
-    @Override
-    public void func_238493_a_(ITextComponent chatComponent, int chatLineId, int ticks, boolean p_238493_4_)
+    @Inject(method = "func_238493_a_(Lnet/minecraft/util/text/ITextComponent;IIZ)V", at = @At("HEAD"), cancellable = true, remap = false)
+    public void func_238493_a_(ITextComponent chatComponent, int chatLineId, int ticks, boolean p_238493_4_, CallbackInfo ci)
     {
         if (chatLineId != 0) this.deleteChatLine(chatLineId);
 
@@ -177,91 +212,67 @@ public class EmbeddedChatGui extends NewChatGui
             if (doIndex) index++;
         }
 
-        ChatEmbeds.LOGGER.debug(chatComponent.getString());
         Matcher matcher = Pattern.compile(URL_REGEX, Pattern.CASE_INSENSITIVE).matcher(chatComponent.getString());
         final boolean embedFound = matcher.find();
 
         if (embedFound)
         {
-            Thread embedLoader = new Thread("Embed loader")
+            Thread embedLoader = NewChatGuiUtil.getThread("Embed loader", () ->
             {
-                @Override
-                public void run()
-                {
-                    doIndex = true;
+                doIndex = true;
 
-                    Embed embed = new Embed.Builder(matcher.group(), ticks, chatLineId).build();
-                    if (embed != null)
-                    {
-                        if (ChatEmbedsConfig.GeneralConfig.removeUrlMessage)
-                            drawnChatLines.removeAll(drawnChatLines.stream()
-                                    .filter(iReorderingProcessorChatLine ->
-                                            list.contains(iReorderingProcessorChatLine.getLineString()))
-                                    .collect(Collectors.toList()));
-                        drawnChatLines.add(index, new ChatLine<>(ticks, LanguageMap.getInstance()
-                                .func_241870_a(new StringTextComponent(chatComponent.getString().split(" ")[0])), chatLineId));
-                        drawnChatLines.addAll(index, Lists.reverse(embed.getChatLines()));
-                    }
-
-                    index = 0;
-                    doIndex = false;
-                }
-            };
-            embedLoader.setDaemon(true);
-            embedLoader.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(ChatEmbeds.LOGGER)
-            {
-                @Override
-                public void uncaughtException(Thread p_uncaughtException_1_, Throwable p_uncaughtException_2_)
+                Embed embed = new Embed.Builder(matcher.group(), ticks, chatLineId).build();
+                if (embed != null)
                 {
-                    super.uncaughtException(p_uncaughtException_1_, p_uncaughtException_2_);
-                    index = 0;
-                    doIndex = false;
+                    if (ChatEmbedsConfig.GeneralConfig.removeUrlMessage)
+                        drawnChatLines.removeAll(drawnChatLines.stream()
+                                .filter(iReorderingProcessorChatLine ->
+                                        list.contains(iReorderingProcessorChatLine.getLineString()))
+                                .collect(Collectors.toList()));
+                    drawnChatLines.add(index, new ChatLine<>(ticks, LanguageMap.getInstance()
+                            .func_241870_a(new StringTextComponent(chatComponent.getString().split(" ")[0])), chatLineId));
+                    drawnChatLines.addAll(index, Lists.reverse(embed.getChatLines()));
                 }
+
+                index = 0;
+                doIndex = false;
             });
+            embedLoader.setDaemon(true);
+            embedLoader.setUncaughtExceptionHandler(NewChatGuiUtil.getUncaughtExceptionHandler(() ->
+            {
+                index = 0;
+                doIndex = false;
+            }));
             embedLoader.start();
         }
 
         while (this.drawnChatLines.size() > 100)
-        {
             this.drawnChatLines.remove(this.drawnChatLines.size() - 1);
-        }
 
         if (!p_238493_4_)
         {
-            if (!embedFound) this.chatLines.add(0, new ChatLine<>(ticks, chatComponent, chatLineId));
+            if (!embedFound)
+                this.chatLines.add(0, new ChatLine<>(ticks, chatComponent, chatLineId));
 
             while (this.chatLines.size() > 100)
-            {
                 this.chatLines.remove(this.chatLines.size() - 1);
-            }
         }
+
+        ci.cancel();
     }
 
-    @Override
-    public void refreshChat()
+    @Inject(method = "refreshChat()V", at = @At("HEAD"), remap = false)
+    public void refreshChat(CallbackInfo ci)
     {
         index = 0;
-        super.refreshChat();
     }
 
-    @Override
-    public boolean func_238491_a_(double mouseX, double mouseY)
+    @SuppressWarnings("ConstantConditions")
+    @Inject(method = "func_238491_a_(DD)Z", at = @At("HEAD"), cancellable = true, remap = false)
+    public void func_238491_a_(double mouseX, double mouseY, CallbackInfoReturnable<Boolean> cir)
     {
-        Embed embed = getEmbed(mouseX, mouseY);
-        if (mc.currentScreen instanceof ChatScreen)
-        {
-            if (embed instanceof AnimatedImageEmbed)
-            {
-                Minecraft.getInstance().displayGuiScreen(new AnimatedImageEmbedScreen((ChatScreen) mc.currentScreen, this.scrollPos, (AnimatedImageEmbed) embed));
-                return true;
-            }
-            if (embed instanceof ImageEmbed)
-            {
-                Minecraft.getInstance().displayGuiScreen(new ImageEmbedScreen((ChatScreen) mc.currentScreen, this.scrollPos, (ImageEmbed) embed));
-                return true;
-            }
-        }
-        return super.func_238491_a_(mouseX, mouseY);
+        if (NewChatGuiUtil.displayImageEmbedScreen(mc, scrollPos, getEmbed(mouseX, mouseY)))
+            cir.setReturnValue(true);
     }
 
     /**
@@ -292,9 +303,7 @@ public class EmbeddedChatGui extends NewChatGui
                         if (chatLine instanceof EmbedChatLine)
                         {
                             if (d0 - 3 <= ((EmbedChatLine<?>) chatLine).getWidth())
-                            {
                                 return ((EmbedChatLine<?>) chatLine).getEmbed();
-                            }
                         }
                     }
                 }
