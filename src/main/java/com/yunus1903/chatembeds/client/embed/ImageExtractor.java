@@ -1,11 +1,11 @@
 package com.yunus1903.chatembeds.client.embed;
 
+import org.jetbrains.annotations.Nullable;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.net.URL;
 

@@ -1,12 +1,12 @@
 package com.yunus1903.chatembeds.client.screen;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
 import com.yunus1903.chatembeds.client.embed.ImageEmbed;
-import net.minecraft.client.gui.GuiComponent;
-import net.minecraft.client.gui.screens.ChatScreen;
-import net.minecraft.client.renderer.texture.DynamicTexture;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.client.gui.DrawableHelper;
+import net.minecraft.client.gui.screen.ChatScreen;
+import net.minecraft.client.texture.NativeImageBackedTexture;
+import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.util.Identifier;
 
 /**
  * @author Yunus1903
@@ -14,7 +14,7 @@ import net.minecraft.resources.ResourceLocation;
  */
 public class ImageEmbedScreen extends AbstractImageEmbedScreen<ImageEmbed>
 {
-    private ResourceLocation imageResourceLocation;
+    private Identifier imageResourceLocation;
 
     public ImageEmbedScreen(ChatScreen parent, int scrollPos, ImageEmbed embed)
     {
@@ -24,22 +24,22 @@ public class ImageEmbedScreen extends AbstractImageEmbedScreen<ImageEmbed>
     @Override
     protected void init()
     {
-        if (minecraft == null) return;
+        if (client == null) return;
         super.init();
         super.tick();
-        imageResourceLocation = minecraft.getTextureManager()
-                .register("embed_fullscreen_image", new DynamicTexture(embed.getImage()));
+        imageResourceLocation = client.getTextureManager()
+                .registerDynamicTexture("embed_fullscreen_image", new NativeImageBackedTexture(embed.getImage()));
     }
 
     @Override
-    public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks)
+    public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks)
     {
-        if (minecraft == null) return;
+        if (client == null) return;
         super.render(matrixStack, mouseX, mouseY, partialTicks);
 
         RenderSystem.setShaderTexture(0, imageResourceLocation);
         RenderSystem.enableBlend();
-        GuiComponent.blit(matrixStack, (width - scaledImageWidth) / 2,
+        DrawableHelper.drawTexture(matrixStack, (width - scaledImageWidth) / 2,
                 (height - scaledImageHeight) / 2, 0, 0,
                 scaledImageWidth, scaledImageHeight, scaledImageWidth, scaledImageHeight);
     }

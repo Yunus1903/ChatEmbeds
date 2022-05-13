@@ -1,10 +1,15 @@
 {
   "required": true,
+  "minVersion": "0.8",
   "package": "com.yunus1903.chatembeds.client.mixin",
   "compatibilityLevel": "JAVA_17",
-  "refmap": "mixins.chatembeds.refmap.json",
+  "mixins": [
+  ],
   "client": [
     "NewChatGuiMixin"
   ],
-  "minVersion": "0.8"
+  "injectors": {
+    "defaultRequire": 1
+  }
 }
+

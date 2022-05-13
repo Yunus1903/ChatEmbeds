@@ -1,15 +1,14 @@
 package com.yunus1903.chatembeds.client.screen;
 
-import com.mojang.blaze3d.platform.NativeImage;
-import com.mojang.blaze3d.vertex.PoseStack;
 import com.yunus1903.chatembeds.client.embed.Embed;
-import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.screens.ChatScreen;
-import net.minecraft.locale.Language;
-import net.minecraft.network.chat.ClickEvent;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.Style;
-import net.minecraft.network.chat.TextComponent;
+import net.minecraft.client.gui.screen.ChatScreen;
+import net.minecraft.client.texture.NativeImage;
+import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.text.ClickEvent;
+import net.minecraft.text.LiteralText;
+import net.minecraft.text.Style;
+import net.minecraft.util.Formatting;
+import net.minecraft.util.Language;
 
 /**
  * @author Yunus1903
@@ -19,7 +18,7 @@ public abstract class AbstractImageEmbedScreen<T extends Embed> extends EmbedScr
 {
     private final int imageWidth, imageHeight;
     protected int scaledImageWidth, scaledImageHeight;
-    private MutableComponent openImage;
+    private LiteralText openImage;
 
     public AbstractImageEmbedScreen(ChatScreen parent, int scrollPos, T embed, NativeImage image)
     {
@@ -46,25 +45,25 @@ public abstract class AbstractImageEmbedScreen<T extends Embed> extends EmbedScr
             }
         }
 
-        openImage = new TextComponent("Open image");
+        openImage = new LiteralText("Open image");
     }
 
     @Override
-    public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks)
+    public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks)
     {
-        if (minecraft == null) return;
+        if (client == null) return;
         super.render(matrixStack, mouseX, mouseY, partialTicks);
 
-        if (mouseOverImage(mouseX, mouseY)) openImage.withStyle(ChatFormatting.UNDERLINE);
+        if (mouseOverImage(mouseX, mouseY)) openImage.formatted(Formatting.UNDERLINE);
         else
         {
             openImage.setStyle(Style.EMPTY.withClickEvent(
                     new ClickEvent(ClickEvent.Action.OPEN_URL, embed.getUrl().toString())));
-            openImage.withStyle(ChatFormatting.DARK_GRAY);
+            openImage.formatted(Formatting.DARK_GRAY);
         }
 
-        minecraft.font.drawShadow(matrixStack,
-                Language.getInstance().getVisualOrder(openImage),
+        client.textRenderer.drawWithShadow(matrixStack,
+                Language.getInstance().reorder(openImage),
                 (width - scaledImageWidth) >> 1,
                 ((height - scaledImageHeight) >> 1) + scaledImageHeight + 5,
                 0xFFFFFF);
@@ -78,8 +77,8 @@ public abstract class AbstractImageEmbedScreen<T extends Embed> extends EmbedScr
                 || mouseY < (height - scaledImageHeight) >> 1
                 || mouseY > ((height - scaledImageHeight) >> 1) + scaledImageHeight)
         {
-            if (mouseOverImage(mouseX, mouseY)) handleComponentClicked(openImage.getStyle());
-            else onClose();
+            if (mouseOverImage(mouseX, mouseY)) handleTextClick(openImage.getStyle());
+            else close();
             return true;
         }
         return super.mouseClicked(mouseX, mouseY, button);
@@ -93,13 +92,13 @@ public abstract class AbstractImageEmbedScreen<T extends Embed> extends EmbedScr
      */
     private boolean mouseOverImage(double mouseX, double mouseY)
     {
-        return minecraft != null
+        return client != null
                 && mouseX >= ((width - scaledImageWidth) >> 1)
                 && mouseX <= ((width - scaledImageWidth) >> 1)
-                + minecraft.font.width(openImage.getString())
+                + client.textRenderer.getWidth(openImage.getString())
                 && mouseY >= ((height - scaledImageHeight) >> 1)
                 + scaledImageHeight + 5
                 && mouseY <= ((height - scaledImageHeight) >> 1)
-                + scaledImageHeight + 5 + minecraft.font.lineHeight;
+                + scaledImageHeight + 5 + client.textRenderer.fontHeight;
     }
 }

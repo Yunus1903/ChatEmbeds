@@ -1,20 +1,22 @@
 package com.yunus1903.chatembeds.client.embed;
 
-import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
 import com.yunus1903.chatembeds.ChatEmbeds;
 import com.yunus1903.chatembeds.ChatEmbedsConfig;
 import com.yunus1903.chatembeds.client.EmbedChatLine;
-import net.minecraft.client.GuiMessage;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiComponent;
-import net.minecraft.client.gui.components.ChatComponent;
-import net.minecraft.client.renderer.texture.DynamicTexture;
-import net.minecraft.locale.Language;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.FormattedCharSequence;
+import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.DrawableHelper;
+import net.minecraft.client.gui.hud.ChatHud;
+import net.minecraft.client.gui.hud.ChatHudLine;
+import net.minecraft.client.texture.NativeImage;
+import net.minecraft.client.texture.NativeImageBackedTexture;
+import net.minecraft.client.texture.TextureManager;
+import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.text.LiteralText;
+import net.minecraft.text.OrderedText;
+import net.minecraft.util.Identifier;
+import net.minecraft.util.Language;
 
 import java.io.IOException;
 import java.net.URL;
@@ -30,7 +32,7 @@ import java.util.List;
 public class ImageEmbed extends Embed
 {
     private NativeImage image, scaledImage;
-    private ResourceLocation imageResourceLocation;
+    private Identifier imageResourceLocation;
 
     ImageEmbed(URL url, int ticks, int chatLineId)
     {
@@ -38,13 +40,13 @@ public class ImageEmbed extends Embed
     }
 
     @Override
-    List<? extends GuiMessage<FormattedCharSequence>> createChatLines()
+    List<? extends ChatHudLine<OrderedText>> createChatHudLines()
     {
-        List<GuiMessage<FormattedCharSequence>> lines = new ArrayList<>();
+        List<ChatHudLine<OrderedText>> lines = new ArrayList<>();
         if (!loadImage()) return lines;
 
-        if (!ChatEmbedsConfig.GeneralConfig.removeUrlMessage)
-            lines.add(new GuiMessage<>(ticks, Language.getInstance().getVisualOrder(new TextComponent("")), chatLineId));
+        if (!ChatEmbedsConfig.getConfig().removeUrlMessage)
+            lines.add(new ChatHudLine<>(ticks, Language.getInstance().reorder(new LiteralText("")), chatHudLineId));
 
         double imageHeight = scaledImage.getHeight();
         double lineHeight = 9.0D;
@@ -60,14 +62,14 @@ public class ImageEmbed extends Embed
             int textureWidth = scaledImage.getWidth();
             int textureHeight = scaledImage.getHeight();
 
-            lines.add(new EmbedChatLine<>(ticks, chatLineId, this)
+            lines.add(new EmbedChatLine<>(ticks, chatHudLineId, this)
             {
                 @Override
-                public void render(Minecraft mc, PoseStack matrixStack, int x, int y)
+                public void render(MinecraftClient mc, MatrixStack matrixStack, int x, int y)
                 {
                     RenderSystem.setShaderTexture(0, imageResourceLocation);
                     RenderSystem.enableBlend();
-                    GuiComponent.blit(matrixStack, x, y, u0, v0, destWidth, destHeight, textureWidth, textureHeight);
+                    DrawableHelper.drawTexture(matrixStack, x, y, u0, v0, destWidth, destHeight, textureWidth, textureHeight);
                 }
 
                 @Override
@@ -95,12 +97,13 @@ public class ImageEmbed extends Embed
 
         if (image == null) return false;
 
-        ChatComponent gui = Minecraft.getInstance().gui.getChat();
+        ChatHud gui = MinecraftClient.getInstance().inGameHud.getChatHud();
+        ChatEmbedsConfig config = ChatEmbedsConfig.getConfig();
         scaledImage = scaleImage(image,
-                Math.min(ChatEmbedsConfig.GeneralConfig.chatImageEmbedMaxWidth, gui.getWidth()),
-                ChatEmbedsConfig.GeneralConfig.chatImageEmbedMaxHeight);
-        imageResourceLocation = Minecraft.getInstance().getTextureManager()
-                .register("chat_embed_image", new DynamicTexture(image));
+                Math.min(config.chatImageEmbedMaxWidth, gui.getWidth()),
+                config.chatImageEmbedMaxHeight);
+        imageResourceLocation = MinecraftClient.getInstance().getTextureManager()
+                .registerDynamicTexture("chat_embed_image", new NativeImageBackedTexture(image));
 
         return true;
     }
@@ -137,7 +140,7 @@ public class ImageEmbed extends Embed
         return scaledImage;
     }
 
-    public ResourceLocation getImageResourceLocation()
+    public Identifier getImageResourceLocation()
     {
         return imageResourceLocation;
     }

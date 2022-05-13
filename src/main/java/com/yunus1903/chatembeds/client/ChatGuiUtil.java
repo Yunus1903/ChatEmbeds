@@ -6,11 +6,11 @@ import com.yunus1903.chatembeds.client.embed.Embed;
 import com.yunus1903.chatembeds.client.embed.ImageEmbed;
 import com.yunus1903.chatembeds.client.screen.AnimatedImageEmbedScreen;
 import com.yunus1903.chatembeds.client.screen.ImageEmbedScreen;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.ChatScreen;
-import net.minecraft.DefaultUncaughtExceptionHandler;
-
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.screen.ChatScreen;
+import net.minecraft.util.logging.UncaughtExceptionHandler;
 import org.jetbrains.annotations.NotNull;
+
 
 /**
  * @author Yunus1903
@@ -30,9 +30,9 @@ public class ChatGuiUtil
         };
     }
 
-    public static DefaultUncaughtExceptionHandler getUncaughtExceptionHandler(Runnable runnable)
+    public static UncaughtExceptionHandler getUncaughtExceptionHandler(Runnable runnable)
     {
-        return new DefaultUncaughtExceptionHandler(ChatEmbeds.LOGGER)
+        return new UncaughtExceptionHandler(ChatEmbeds.LOGGER)
         {
             @Override
             public void uncaughtException(Thread p_uncaughtException_1_, Throwable p_uncaughtException_2_)
@@ -43,18 +43,18 @@ public class ChatGuiUtil
         };
     }
 
-    public static boolean displayImageEmbedScreen(@NotNull Minecraft mc, int scrollPos, Embed embed)
+    public static boolean displayImageEmbedScreen(@NotNull MinecraftClient mc, int scrollPos, Embed embed)
     {
-        if (mc.screen instanceof ChatScreen)
+        if (mc.currentScreen instanceof ChatScreen)
         {
             if (embed instanceof AnimatedImageEmbed)
             {
-                mc.setScreen(new AnimatedImageEmbedScreen((ChatScreen) mc.screen, scrollPos, (AnimatedImageEmbed) embed));
+                mc.setScreen(new AnimatedImageEmbedScreen((ChatScreen) mc.currentScreen, scrollPos, (AnimatedImageEmbed) embed));
                 return true;
             }
             if (embed instanceof ImageEmbed)
             {
-                mc.setScreen(new ImageEmbedScreen((ChatScreen) mc.screen, scrollPos, (ImageEmbed) embed));
+                mc.setScreen(new ImageEmbedScreen((ChatScreen) mc.currentScreen, scrollPos, (ImageEmbed) embed));
                 return true;
             }
         }

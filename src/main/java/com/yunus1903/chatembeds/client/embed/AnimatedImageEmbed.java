@@ -2,21 +2,21 @@ package com.yunus1903.chatembeds.client.embed;
 
 import at.dhyan.open_imaging.GifDecoder;
 import com.google.common.io.ByteStreams;
-import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
 import com.yunus1903.chatembeds.ChatEmbeds;
 import com.yunus1903.chatembeds.ChatEmbedsConfig;
 import com.yunus1903.chatembeds.client.EmbedChatLine;
-import net.minecraft.client.GuiMessage;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiComponent;
-import net.minecraft.client.gui.components.ChatComponent;
-import net.minecraft.client.renderer.texture.DynamicTexture;
-import net.minecraft.locale.Language;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.DrawableHelper;
+import net.minecraft.client.gui.hud.ChatHud;
+import net.minecraft.client.gui.hud.ChatHudLine;
+import net.minecraft.client.texture.NativeImage;
+import net.minecraft.client.texture.NativeImageBackedTexture;
+import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.text.LiteralText;
+import net.minecraft.text.OrderedText;
+import net.minecraft.util.Identifier;
+import net.minecraft.util.Language;
 
 import javax.imageio.ImageIO;
 import java.io.ByteArrayInputStream;
@@ -42,20 +42,20 @@ public class AnimatedImageEmbed extends Embed
     protected EmbedChatLine<AnimatedImageEmbed> currentRenderer;
     protected int currentFrame;
 
-    AnimatedImageEmbed(URL url, int ticks, int chatLineId)
+    AnimatedImageEmbed(URL url, int ticks, int ChatHudLineId)
     {
-        super(url, ticks, chatLineId);
+        super(url, ticks, ChatHudLineId);
     }
 
     @Override
-    List<? extends GuiMessage<FormattedCharSequence>> createChatLines()
+    List<? extends ChatHudLine<OrderedText>> createChatHudLines()
     {
         frames = new ArrayList<>();
-        List<GuiMessage<FormattedCharSequence>> lines = new ArrayList<>();
+        List<ChatHudLine<OrderedText>> lines = new ArrayList<>();
         if (!loadImage()) return lines;
 
-        if (!ChatEmbedsConfig.GeneralConfig.removeUrlMessage)
-            lines.add(new GuiMessage<>(ticks, Language.getInstance().getVisualOrder(new TextComponent("")), chatLineId));
+        if (!ChatEmbedsConfig.getConfig().removeUrlMessage)
+            lines.add(new ChatHudLine<>(ticks, Language.getInstance().reorder(new LiteralText("")), chatHudLineId));
 
         NativeImage scaledImage = frames.get(0).getScaledImage();
 
@@ -73,14 +73,14 @@ public class AnimatedImageEmbed extends Embed
             int textureWidth = scaledImage.getWidth();
             int textureHeight = scaledImage.getHeight();
 
-            lines.add(new EmbedChatLine<>(ticks, chatLineId, this)
+            lines.add(new EmbedChatLine<>(ticks, chatHudLineId, this)
             {
                 private int time;
                 private int lastFrameIndex;
                 private int lastScrollPos;
 
                 @Override
-                public void render(Minecraft mc, PoseStack matrixStack, int x, int y)
+                public void render(MinecraftClient mc, MatrixStack matrixStack, int x, int y)
                 {
                     if (lastScrollPos != getScrollPos())
                     {
@@ -92,7 +92,7 @@ public class AnimatedImageEmbed extends Embed
 
                     if (currentRenderer == this)
                     {
-                        final int frameIndex = mc.frameTimer.getLogEnd();
+                        final int frameIndex = mc.metricsData.getCurrentIndex();
 
                         if (lastFrameIndex != frameIndex)
                         {
@@ -110,7 +110,7 @@ public class AnimatedImageEmbed extends Embed
 
                     RenderSystem.setShaderTexture(0, frames.get(currentFrame).getResourceLocation());
                     RenderSystem.enableBlend();
-                    GuiComponent.blit(matrixStack, x, y, u0, v0, destWidth, destHeight, textureWidth, textureHeight);
+                    DrawableHelper.drawTexture(matrixStack, x, y, u0, v0, destWidth, destHeight, textureWidth, textureHeight);
                 }
 
                 @Override
@@ -162,9 +162,9 @@ public class AnimatedImageEmbed extends Embed
                 ImageIO.write(image.getFrame(i), "gif", outputStream);
                 NativeImage nativeImage = NativeImage.read(new ByteArrayInputStream(outputStream.toByteArray()));
 
-                ResourceLocation resourceLocation = Minecraft.getInstance().getTextureManager()
-                        .register("chat_embed_animated_image_frame_"
-                                + i, new DynamicTexture(nativeImage));
+                Identifier resourceLocation = MinecraftClient.getInstance().getTextureManager()
+                        .registerDynamicTexture("chat_embed_animated_image_frame_"
+                                + i, new NativeImageBackedTexture(nativeImage));
                 frames.add(new Frame(nativeImage, resourceLocation, image.getDelay(i)));
             }
         }
@@ -184,16 +184,17 @@ public class AnimatedImageEmbed extends Embed
     public static class Frame
     {
         private final NativeImage image, scaledImage;
-        private final ResourceLocation resourceLocation;
+        private final Identifier resourceLocation;
         private final int delay;
 
-        private Frame(NativeImage image, ResourceLocation resourceLocation, int delay)
+        private Frame(NativeImage image, Identifier resourceLocation, int delay)
         {
             this.image = image;
-            ChatComponent gui = Minecraft.getInstance().gui.getChat();
+            ChatHud gui = MinecraftClient.getInstance().inGameHud.getChatHud();
+            ChatEmbedsConfig config = ChatEmbedsConfig.getConfig();
             this.scaledImage = ImageEmbed.scaleImage(image,
-                    Math.min(ChatEmbedsConfig.GeneralConfig.chatImageEmbedMaxWidth, gui.getWidth()),
-                    ChatEmbedsConfig.GeneralConfig.chatImageEmbedMaxHeight);
+                    Math.min(config.chatImageEmbedMaxWidth, gui.getWidth()),
+                    config.chatImageEmbedMaxHeight);
             this.resourceLocation = resourceLocation;
             this.delay = delay;
         }
@@ -208,7 +209,7 @@ public class AnimatedImageEmbed extends Embed
             return scaledImage;
         }
 
-        public ResourceLocation getResourceLocation()
+        public Identifier getResourceLocation()
         {
             return resourceLocation;
         }

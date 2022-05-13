@@ -2,10 +2,10 @@ package com.yunus1903.chatembeds.client.embed;
 
 import com.yunus1903.chatembeds.ChatEmbeds;
 import com.yunus1903.chatembeds.ChatEmbedsConfig;
-import net.minecraft.client.GuiMessage;
-import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.client.gui.hud.ChatHudLine;
+import net.minecraft.text.OrderedText;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.net.*;
 import java.util.List;
@@ -20,24 +20,24 @@ public abstract class Embed
     private static final String USER_AGENT = "Mozilla/4.0";
 
     final URL url;
-    final int ticks, chatLineId;
+    final int ticks, chatHudLineId;
     @Nullable
     final HttpURLConnection connection;
-    private final List<? extends GuiMessage<FormattedCharSequence>> chatLines;
+    private final List<? extends ChatHudLine<OrderedText>> chatHudLines;
 
     /**
      * Constructor
      * @param url {@link URL} source of the embed
      * @param ticks Minecraft ticks
-     * @param chatLineId ID of the chat line
+     * @param chatHudLineId ID of the chat line
      */
-    Embed(URL url, int ticks, int chatLineId)
+    Embed(URL url, int ticks, int chatHudLineId)
     {
         this.url = url;
         this.ticks = ticks;
-        this.chatLineId = chatLineId;
+        this.chatHudLineId = chatHudLineId;
         this.connection = openConnection();
-        this.chatLines = createChatLines();
+        this.chatHudLines = createChatHudLines();
         if (this.connection != null) this.connection.disconnect();
     }
 
@@ -62,17 +62,17 @@ public abstract class Embed
     }
 
     /**
-     * Creates the chatlines
-     * @return A list of {@link GuiMessage chatlines}
+     * Creates the ChatHudLines
+     * @return A list of {@link ChatHudLine ChatHudLines}
      */
-    abstract List<? extends GuiMessage<FormattedCharSequence>> createChatLines();
+    abstract List<? extends ChatHudLine<OrderedText>> createChatHudLines();
 
     /**
-     * @return List of {@link GuiMessage chatlines}
+     * @return List of {@link ChatHudLine ChatHudLines}
      */
-    public List<? extends GuiMessage<FormattedCharSequence>> getChatLines()
+    public List<? extends ChatHudLine<OrderedText>> getChatHudLines()
     {
-        return chatLines;
+        return chatHudLines;
     }
 
     /**
@@ -89,19 +89,19 @@ public abstract class Embed
     public static class Builder
     {
         private final String url;
-        private final int ticks, chatLineId;
+        private final int ticks, chatHudLineId;
 
         /**
          * Builder constructor
          * @param url Source of the embed as a String
          * @param ticks Minecraft ticks
-         * @param chatLineId ID of the chat line
+         * @param chatHudLineId ID of the chat line
          */
-        public Builder(String url, int ticks, int chatLineId)
+        public Builder(String url, int ticks, int chatHudLineId)
         {
             this.url = url;
             this.ticks = ticks;
-            this.chatLineId = chatLineId;
+            this.chatHudLineId = chatHudLineId;
         }
 
         /**
@@ -117,6 +117,7 @@ public abstract class Embed
             String extension = parsedURL.toString().substring(parsedURL.toString().lastIndexOf(".") + 1);
             if (extension.contains("?")) extension = extension.substring(0, extension.indexOf("?"));
 
+            ChatEmbedsConfig config = ChatEmbedsConfig.getConfig();
             try
             {
                 String imageURL = ImageExtractor.extractImageURL(parsedURL);
@@ -125,11 +126,11 @@ public abstract class Embed
                     parsedURL = new URL(imageURL);
                     if (extension.equals("gif") || extension.equals("gifv"))
                     {
-                        if (ChatEmbedsConfig.GeneralConfig.enableAnimatedImageEmbeds)
-                            return new AnimatedImageEmbed(parsedURL, ticks, chatLineId);
+                        if (config.enableAnimatedImageEmbeds)
+                            return new AnimatedImageEmbed(parsedURL, ticks, chatHudLineId);
                     }
-                    else if (ChatEmbedsConfig.GeneralConfig.enableImageEmbeds)
-                        return new ImageEmbed(parsedURL, ticks, chatLineId);
+                    else if (config.enableImageEmbeds)
+                        return new ImageEmbed(parsedURL, ticks, chatHudLineId);
                 }
             }
             catch (MalformedURLException e)
@@ -138,7 +139,7 @@ public abstract class Embed
             }
             catch (IOException ignored) { }
 
-            if (ChatEmbedsConfig.GeneralConfig.enableTextEmbeds) return new TextEmbed(parsedURL, ticks, chatLineId);
+            if (config.enableTextEmbeds) return new TextEmbed(parsedURL, ticks, chatHudLineId);
             return null;
         }
 
