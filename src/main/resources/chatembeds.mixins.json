@@ -1,7 +1,7 @@
 {
   "required": true,
   "package": "com.yunus1903.chatembeds.client.mixin",
-  "compatibilityLevel": "JAVA_8",
+  "compatibilityLevel": "JAVA_17",
   "refmap": "mixins.chatembeds.refmap.json",
   "client": [
     "NewChatGuiMixin"

@@ -1,11 +1,12 @@
 package com.yunus1903.chatembeds.client.screen;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.yunus1903.chatembeds.client.embed.ImageEmbed;
-import net.minecraft.client.gui.AbstractGui;
-import net.minecraft.client.gui.screen.ChatScreen;
+import net.minecraft.client.gui.GuiComponent;
+import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.renderer.texture.DynamicTexture;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.ResourceLocation;
 
 /**
  * @author Yunus1903
@@ -27,17 +28,18 @@ public class ImageEmbedScreen extends AbstractImageEmbedScreen<ImageEmbed>
         super.init();
         super.tick();
         imageResourceLocation = minecraft.getTextureManager()
-                .getDynamicTextureLocation("embed_fullscreen_image", new DynamicTexture(embed.getImage()));
+                .register("embed_fullscreen_image", new DynamicTexture(embed.getImage()));
     }
 
     @Override
-    public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks)
+    public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks)
     {
         if (minecraft == null) return;
         super.render(matrixStack, mouseX, mouseY, partialTicks);
 
-        minecraft.getTextureManager().bindTexture(imageResourceLocation);
-        AbstractGui.blit(matrixStack, (width - scaledImageWidth) / 2,
+        RenderSystem.setShaderTexture(0, imageResourceLocation);
+        RenderSystem.enableBlend();
+        GuiComponent.blit(matrixStack, (width - scaledImageWidth) / 2,
                 (height - scaledImageHeight) / 2, 0, 0,
                 scaledImageWidth, scaledImageHeight, scaledImageWidth, scaledImageHeight);
     }

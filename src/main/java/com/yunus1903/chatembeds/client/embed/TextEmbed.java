@@ -1,13 +1,17 @@
 package com.yunus1903.chatembeds.client.embed;
 
 import com.yunus1903.chatembeds.ChatEmbeds;
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.GuiMessage;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.ChatLine;
-import net.minecraft.client.gui.NewChatGui;
-import net.minecraft.client.gui.RenderComponentsUtil;
-import net.minecraft.util.IReorderingProcessor;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.text.*;
+import net.minecraft.client.gui.components.ChatComponent;
+import net.minecraft.client.gui.components.ComponentRenderUtils;
+import net.minecraft.locale.Language;
+import net.minecraft.network.chat.FormattedText;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.util.Mth;
 
 import javax.annotation.Nullable;
 import javax.swing.text.html.HTML;
@@ -28,7 +32,7 @@ import java.util.List;
 public class TextEmbed extends Embed
 {
     @Nullable
-    private ITextProperties title, description;
+    private FormattedText title, description;
 
     TextEmbed(URL url, int ticks, int chatLineId)
     {
@@ -36,21 +40,21 @@ public class TextEmbed extends Embed
     }
 
     @Override
-    List<? extends ChatLine<IReorderingProcessor>> createChatLines()
+    List<? extends GuiMessage<FormattedCharSequence>> createChatLines()
     {
-        List<ChatLine<IReorderingProcessor>> lines = new ArrayList<>();
+        List<GuiMessage<FormattedCharSequence>> lines = new ArrayList<>();
         if (!loadText() || title == null) return lines;
 
-        lines.add(new ChatLine<>(ticks, LanguageMap.getInstance().func_241870_a(new StringTextComponent("")), chatLineId));
-        lines.add(new ChatLine<>(ticks, LanguageMap.getInstance().func_241870_a(title), chatLineId));
-        lines.add(new ChatLine<>(ticks, LanguageMap.getInstance().func_241870_a(new StringTextComponent("")), chatLineId));
+        lines.add(new GuiMessage<>(ticks, Language.getInstance().getVisualOrder(new TextComponent("")), chatLineId));
+        lines.add(new GuiMessage<>(ticks, Language.getInstance().getVisualOrder(title), chatLineId));
+        lines.add(new GuiMessage<>(ticks, Language.getInstance().getVisualOrder(new TextComponent("")), chatLineId));
         if (description != null)
         {
-            int i = MathHelper.floor((double) NewChatGui.calculateChatboxWidth(Minecraft.getInstance().gameSettings.chatWidth) / Minecraft.getInstance().gameSettings.chatScale);
-            description = ((IFormattableTextComponent) description).mergeStyle(TextFormatting.GRAY);
-            List<IReorderingProcessor> list = RenderComponentsUtil.func_238505_a_(description, i, Minecraft.getInstance().fontRenderer);
-            list.forEach(line -> lines.add(new ChatLine<>(ticks, line, chatLineId)));
-            lines.add(new ChatLine<>(ticks, LanguageMap.getInstance().func_241870_a(new StringTextComponent("")), chatLineId));
+            int i = Mth.floor((double) ChatComponent.getWidth(Minecraft.getInstance().options.chatWidth) / Minecraft.getInstance().options.chatScale);
+            description = ((MutableComponent) description).withStyle(ChatFormatting.GRAY);
+            List<FormattedCharSequence> list = ComponentRenderUtils.wrapComponents(description, i, Minecraft.getInstance().font);
+            list.forEach(line -> lines.add(new GuiMessage<>(ticks, line, chatLineId)));
+            lines.add(new GuiMessage<>(ticks, Language.getInstance().getVisualOrder(new TextComponent("")), chatLineId));
         }
 
         return lines;
@@ -73,7 +77,7 @@ public class TextEmbed extends Embed
 
         try
         {
-            title = new StringTextComponent(doc.getProperty("title").toString()).mergeStyle(TextFormatting.GRAY, TextFormatting.UNDERLINE);
+            title = new TextComponent(doc.getProperty("title").toString()).withStyle(ChatFormatting.GRAY, ChatFormatting.UNDERLINE);
         }
         catch (NullPointerException ignored) { }
 
@@ -81,7 +85,7 @@ public class TextEmbed extends Embed
         {
             try
             {
-                title = new StringTextComponent((String) doc.getElement(doc.getDefaultRootElement(), HTML.Attribute.NAME, "title").getAttributes().getAttribute(HTML.Attribute.CONTENT)).mergeStyle(TextFormatting.GRAY, TextFormatting.UNDERLINE);
+                title = new TextComponent((String) doc.getElement(doc.getDefaultRootElement(), HTML.Attribute.NAME, "title").getAttributes().getAttribute(HTML.Attribute.CONTENT)).withStyle(ChatFormatting.GRAY, ChatFormatting.UNDERLINE);
             }
             catch (NullPointerException ignored) { }
         }
@@ -89,7 +93,7 @@ public class TextEmbed extends Embed
         try
         {
             String desc = (String) doc.getElement(doc.getDefaultRootElement(), HTML.Attribute.NAME, "description").getAttributes().getAttribute(HTML.Attribute.CONTENT);
-            description = new StringTextComponent(desc.replace("\r", "\n"));
+            description = new TextComponent(desc.replace("\r", "\n"));
         }
         catch (NullPointerException ignored) { }
 
@@ -97,13 +101,13 @@ public class TextEmbed extends Embed
     }
 
     @Nullable
-    public ITextProperties getTitle()
+    public FormattedText getTitle()
     {
         return title;
     }
 
     @Nullable
-    public ITextProperties getDescription()
+    public FormattedText getDescription()
     {
         return description;
     }

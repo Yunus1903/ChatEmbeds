@@ -4,6 +4,7 @@ import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.fml.event.config.ModConfigEvent;
 
 /**
  * @author Yunus1903
@@ -26,7 +27,7 @@ public class ChatEmbedsConfig
     }
 
     @SubscribeEvent
-    public static void onModConfigEvent(final ModConfig.ModConfigEvent event)
+    public static void onModConfigEvent(final ModConfigEvent event)
     {
         if (event.getConfig().getSpec() == CLIENT_SPEC)
         {

@@ -1,22 +1,22 @@
 package com.yunus1903.chatembeds.client.mixin;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.yunus1903.chatembeds.ChatEmbedsConfig;
+import com.yunus1903.chatembeds.client.ChatGuiUtil;
 import com.yunus1903.chatembeds.client.EmbedChatLine;
-import com.yunus1903.chatembeds.client.NewChatGuiUtil;
 import com.yunus1903.chatembeds.client.embed.Embed;
+import net.minecraft.client.GuiMessage;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.ChatLine;
-import net.minecraft.client.gui.NewChatGui;
-import net.minecraft.client.gui.RenderComponentsUtil;
-import net.minecraft.util.IReorderingProcessor;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.LanguageMap;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.client.gui.components.ChatComponent;
+import net.minecraft.client.gui.components.ComponentRenderUtils;
+import net.minecraft.locale.Language;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.util.Mth;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -32,14 +32,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static net.minecraft.client.gui.AbstractGui.fill;
-import static net.minecraft.client.gui.NewChatGui.getLineBrightness;
+import static com.yunus1903.chatembeds.client.ChatScrollPos.setScrollPos;
+import static net.minecraft.client.gui.GuiComponent.fill;
 
 /**
  * @author Yunus1903
  * @since 01/02/2021
  */
-@Mixin(NewChatGui.class)
+@Mixin(ChatComponent.class)
 public abstract class NewChatGuiMixin
 {
     private static final String URL_REGEX = "((https?)://|(www)\\.)?[a-z0-9-]+(\\.[a-z0-9-]+)+([/?].*)?";
@@ -47,168 +47,165 @@ public abstract class NewChatGuiMixin
     private boolean doIndex = false;
     private int index = 0;
 
-    @Shadow(remap = false)
-    public abstract boolean func_238496_i_();
-
-    @Shadow(remap = false)
-    public abstract void func_238498_k_();
+    @Shadow
+    protected abstract boolean isChatHidden();
 
     @Shadow
-    public abstract int getLineCount();
+    protected abstract void processPendingMessages();
+
+    @Shadow
+    public abstract int getLinesPerPage();
 
     @Shadow
     @Final
-    public List<ChatLine<IReorderingProcessor>> drawnChatLines;
+    private List<GuiMessage<FormattedCharSequence>> trimmedMessages;
 
     @Shadow
-    public abstract boolean getChatOpen();
+    protected abstract boolean isChatFocused();
 
     @Shadow
     public abstract double getScale();
 
     @Shadow
-    public abstract int getChatWidth();
+    public abstract int getWidth();
 
     @Shadow
-    public int scrollPos;
-
-    @Shadow
-    @Final
-    private Minecraft mc;
-
-    @Shadow(remap = false)
-    @Final
-    public Deque<ITextComponent> field_238489_i_;
-
-    @Shadow
-    public boolean isScrolled;
-
-    @Shadow
-    public abstract void deleteChatLine(int id);
-
-    @Shadow
-    public abstract void addScrollPos(double posInc);
+    private int chatScrollbarPos;
 
     @Shadow
     @Final
-    public List<ChatLine<ITextComponent>> chatLines;
+    private Minecraft minecraft;
+
+    @Shadow
+    @Final
+    private Deque<Component> chatQueue;
+
+    @Shadow
+    private boolean newMessageSinceScroll;
+
+    @Shadow
+    protected abstract void removeById(int id);
+
+    @Shadow
+    public abstract void scrollChat(int posInc);
+
+    @Shadow
+    @Final
+    private List<GuiMessage<Component>> allMessages;
+
+    @Shadow
+    private static double getTimeFactor(int p_93776_) {
+        return 0.0;
+    }
 
     @SuppressWarnings("deprecation")
-    @Inject(method = "func_238492_a_(Lcom/mojang/blaze3d/matrix/MatrixStack;I)V", at = @At("HEAD"), cancellable = true, remap = false)
-    public void func_238492_a_(MatrixStack matrixStack, int ticks, CallbackInfo ci)
+    @Inject(method = "render", at = @At("HEAD"), cancellable = true)
+    public void render(PoseStack poseStack, int ticks, CallbackInfo ci)
     {
-        if (!this.func_238496_i_())
-        {
-            this.func_238498_k_();
-            int i = this.getLineCount();
-            int j = this.drawnChatLines.size();
-            if (j > 0)
-            {
+        if (!this.isChatHidden()) {
+            this.processPendingMessages();
+            int i = this.getLinesPerPage();
+            int j = this.trimmedMessages.size();
+            if (j > 0) {
                 boolean flag = false;
-                if (this.getChatOpen()) flag = true;
+                if (this.isChatFocused()) {
+                    flag = true;
+                }
 
-                double d0 = this.getScale();
-                int k = MathHelper.ceil((double) this.getChatWidth() / d0);
-                RenderSystem.pushMatrix();
-                RenderSystem.translatef(2.0F, 8.0F, 0.0F);
-                RenderSystem.scaled(d0, d0, 1.0D);
-                double d1 = this.mc.gameSettings.chatOpacity * (double) 0.9F + (double) 0.1F;
-                double d2 = this.mc.gameSettings.accessibilityTextBackgroundOpacity;
-                double d3 = 9.0D * (this.mc.gameSettings.chatLineSpacing + 1.0D);
-                double d4 = -8.0D * (this.mc.gameSettings.chatLineSpacing + 1.0D) + 4.0D * this.mc.gameSettings.chatLineSpacing;
+                float f = (float)this.getScale();
+                int k = Mth.ceil((float)this.getWidth() / f);
+                poseStack.pushPose();
+                poseStack.translate(4.0D, 8.0D, 0.0D);
+                poseStack.scale(f, f, 1.0F);
+                double d0 = this.minecraft.options.chatOpacity * (double)0.9F + (double)0.1F;
+                double d1 = this.minecraft.options.textBackgroundOpacity;
+                double d2 = 9.0D * (this.minecraft.options.chatLineSpacing + 1.0D);
+                double d3 = -8.0D * (this.minecraft.options.chatLineSpacing + 1.0D) + 4.0D * this.minecraft.options.chatLineSpacing;
                 int l = 0;
 
-                for (int i1 = 0; i1 + this.scrollPos < this.drawnChatLines.size() && i1 < i; ++i1)
-                {
-                    ChatLine<IReorderingProcessor> chatline = this.drawnChatLines.get(i1 + this.scrollPos);
-                    if (chatline != null)
-                    {
-                        int j1 = ticks - chatline.getUpdatedCounter();
-                        if (j1 < 200 || flag)
-                        {
-                            double d5 = flag ? 1.0D : getLineBrightness(j1);
-                            int l1 = (int) (255.0D * d5 * d1);
-                            int i2 = (int) (255.0D * d5 * d2);
+                for(int i1 = 0; i1 + this.chatScrollbarPos < this.trimmedMessages.size() && i1 < i; ++i1) {
+                    GuiMessage<FormattedCharSequence> guimessage = this.trimmedMessages.get(i1 + this.chatScrollbarPos);
+                    if (guimessage != null) {
+                        int j1 = ticks - guimessage.getAddedTime();
+                        if (j1 < 200 || flag) {
+                            double d4 = flag ? 1.0D : getTimeFactor(j1);
+                            int l1 = (int)(255.0D * d4 * d0);
+                            int i2 = (int)(255.0D * d4 * d1);
                             ++l;
-                            if (l1 > 3)
-                            {
-                                double d6 = (double) (-i1) * d3;
-                                matrixStack.push();
-                                matrixStack.translate(0.0D, 0.0D, 50.0D);
-                                fill(matrixStack, -2, (int) (d6 - d3), k + 4, (int) d6, i2 << 24);
+                            if (l1 > 3) {
+                                int j2 = 0;
+                                double d5 = (double)(-i1) * d2;
+                                poseStack.pushPose();
+                                poseStack.translate(0.0D, 0.0D, 50.0D);
+                                fill(poseStack, -4, (int)(d5 - d2), 0 + k + 4, (int)d5, i2 << 24);
                                 RenderSystem.enableBlend();
-                                matrixStack.translate(0.0D, 0.0D, 50.0D);
-                                if (chatline instanceof EmbedChatLine)
-                                    ((EmbedChatLine<?>) chatline)
-                                            .render(mc, matrixStack, 3, ((int) (d6 + d4)));
+                                poseStack.translate(0.0D, 0.0D, 50.0D);
+                                if (guimessage instanceof EmbedChatLine)
+                                    ((EmbedChatLine<?>) guimessage)
+                                            .render(this.minecraft, poseStack, 3, ((int) (d5 + d3)));
                                 else
-                                    this.mc.fontRenderer.func_238407_a_(matrixStack, chatline.getLineString(),
-                                            0.0F, (float) ((int) (d6 + d4)), 16777215 + (l1 << 24));
-                                RenderSystem.disableAlphaTest();
+                                    this.minecraft.font.drawShadow(poseStack, guimessage.getMessage(),
+                                            0.0F, (float)((int)(d5 + d3)), 16777215 + (l1 << 24));
                                 RenderSystem.disableBlend();
-                                matrixStack.pop();
+                                poseStack.popPose();
                             }
                         }
                     }
                 }
 
-                if (!this.field_238489_i_.isEmpty())
-                {
-                    int k2 = (int) (128.0D * d1);
-                    int i3 = (int) (255.0D * d2);
-                    matrixStack.push();
-                    matrixStack.translate(0.0D, 0.0D, 50.0D);
-                    fill(matrixStack, -2, 0, k + 4, 9, i3 << 24);
+                if (!this.chatQueue.isEmpty()) {
+                    int k2 = (int)(128.0D * d0);
+                    int i3 = (int)(255.0D * d1);
+                    poseStack.pushPose();
+                    poseStack.translate(0.0D, 0.0D, 50.0D);
+                    fill(poseStack, -2, 0, k + 4, 9, i3 << 24);
                     RenderSystem.enableBlend();
-                    matrixStack.translate(0.0D, 0.0D, 50.0D);
-                    this.mc.fontRenderer.func_243246_a(matrixStack, new TranslationTextComponent("chat.queue", this.field_238489_i_.size()), 0.0F, 1.0F, 16777215 + (k2 << 24));
-                    matrixStack.pop();
-                    RenderSystem.disableAlphaTest();
+                    poseStack.translate(0.0D, 0.0D, 50.0D);
+                    this.minecraft.font.drawShadow(poseStack, new TranslatableComponent("chat.queue", this.chatQueue.size()), 0.0F, 1.0F, 16777215 + (k2 << 24));
+                    poseStack.popPose();
                     RenderSystem.disableBlend();
                 }
 
-                if (flag)
-                {
+                if (flag) {
                     int l2 = 9;
-                    RenderSystem.translatef(-3.0F, 0.0F, 0.0F);
-                    int j3 = j * l2 + j;
-                    int k3 = l * l2 + l;
-                    int l3 = this.scrollPos * k3 / j;
+                    int j3 = j * l2;
+                    int k3 = l * l2;
+                    int l3 = this.chatScrollbarPos * k3 / j;
                     int k1 = k3 * k3 / j3;
-                    if (j3 != k3)
-                    {
+                    if (j3 != k3) {
                         int i4 = l3 > 0 ? 170 : 96;
-                        int j4 = this.isScrolled ? 13382451 : 3355562;
-                        fill(matrixStack, 0, -l3, 2, -l3 - k1, j4 + (i4 << 24));
-                        fill(matrixStack, 2, -l3, 1, -l3 - k1, 13421772 + (i4 << 24));
+                        int j4 = this.newMessageSinceScroll ? 13382451 : 3355562;
+                        poseStack.translate(-4.0D, 0.0D, 0.0D);
+                        fill(poseStack, 0, -l3, 2, -l3 - k1, j4 + (i4 << 24));
+                        fill(poseStack, 2, -l3, 1, -l3 - k1, 13421772 + (i4 << 24));
                     }
                 }
 
-                RenderSystem.popMatrix();
+                poseStack.popPose();
             }
         }
 
         ci.cancel();
     }
 
-    @Inject(method = "func_238493_a_(Lnet/minecraft/util/text/ITextComponent;IIZ)V", at = @At("HEAD"), cancellable = true, remap = false)
-    public void func_238493_a_(ITextComponent chatComponent, int chatLineId, int ticks, boolean p_238493_4_, CallbackInfo ci)
+    @Inject(method = "addMessage(Lnet/minecraft/network/chat/Component;IIZ)V", at = @At("HEAD"), cancellable = true)
+    public void addMessage(Component chatComponent, int chatLineId, int ticks, boolean p_238493_4_, CallbackInfo ci)
     {
-        if (chatLineId != 0) this.deleteChatLine(chatLineId);
+        if (chatLineId != 0) this.removeById(chatLineId);
 
-        int i = MathHelper.floor((double) this.getChatWidth() / this.getScale());
-        List<IReorderingProcessor> list = RenderComponentsUtil.func_238505_a_(chatComponent, i, this.mc.fontRenderer);
-        boolean flag = this.getChatOpen();
+        int i = Mth.floor((double) this.getWidth() / this.getScale());
+        List<FormattedCharSequence> list = ComponentRenderUtils.wrapComponents(chatComponent, i, this.minecraft.font);
+        boolean flag = this.isChatFocused();
 
-        for (IReorderingProcessor iReorderingProcessor : list)
+        for (FormattedCharSequence formattedcharsequence : list)
         {
-            if (flag && this.scrollPos > 0)
+            if (flag && this.chatScrollbarPos > 0)
             {
-                this.isScrolled = true;
-                this.addScrollPos(1.0D);
+                this.newMessageSinceScroll = true;
+                this.scrollChat(1);
             }
 
-            this.drawnChatLines.add(0, new ChatLine<>(ticks, iReorderingProcessor, chatLineId));
+            this.trimmedMessages.add(0, new GuiMessage<>(ticks, formattedcharsequence, chatLineId));
             if (doIndex) index++;
         }
 
@@ -217,7 +214,7 @@ public abstract class NewChatGuiMixin
 
         if (embedFound)
         {
-            Thread embedLoader = NewChatGuiUtil.getThread("Embed loader", () ->
+            Thread embedLoader = ChatGuiUtil.getThread("Embed loader", () ->
             {
                 doIndex = true;
 
@@ -225,20 +222,20 @@ public abstract class NewChatGuiMixin
                 if (embed != null)
                 {
                     if (ChatEmbedsConfig.GeneralConfig.removeUrlMessage)
-                        drawnChatLines.removeAll(drawnChatLines.stream()
+                        trimmedMessages.removeAll(trimmedMessages.stream()
                                 .filter(iReorderingProcessorChatLine ->
-                                        list.contains(iReorderingProcessorChatLine.getLineString()))
+                                        list.contains(iReorderingProcessorChatLine.getMessage()))
                                 .collect(Collectors.toList()));
-                    drawnChatLines.add(index, new ChatLine<>(ticks, LanguageMap.getInstance()
-                            .func_241870_a(new StringTextComponent(chatComponent.getString().split(" ")[0])), chatLineId));
-                    drawnChatLines.addAll(index, Lists.reverse(embed.getChatLines()));
+                    trimmedMessages.add(index, new GuiMessage<>(ticks, Language.getInstance()
+                            .getVisualOrder(new TextComponent(chatComponent.getString().split(" ")[0])), chatLineId));
+                    trimmedMessages.addAll(index, Lists.reverse(embed.getChatLines()));
                 }
 
                 index = 0;
                 doIndex = false;
             });
             embedLoader.setDaemon(true);
-            embedLoader.setUncaughtExceptionHandler(NewChatGuiUtil.getUncaughtExceptionHandler(() ->
+            embedLoader.setUncaughtExceptionHandler(ChatGuiUtil.getUncaughtExceptionHandler(() ->
             {
                 index = 0;
                 doIndex = false;
@@ -246,32 +243,42 @@ public abstract class NewChatGuiMixin
             embedLoader.start();
         }
 
-        while (this.drawnChatLines.size() > 100)
-            this.drawnChatLines.remove(this.drawnChatLines.size() - 1);
+        while (this.trimmedMessages.size() > 100)
+            this.trimmedMessages.remove(this.trimmedMessages.size() - 1);
 
         if (!p_238493_4_)
         {
             if (!embedFound)
-                this.chatLines.add(0, new ChatLine<>(ticks, chatComponent, chatLineId));
+                this.allMessages.add(0, new GuiMessage<>(ticks, chatComponent, chatLineId));
 
-            while (this.chatLines.size() > 100)
-                this.chatLines.remove(this.chatLines.size() - 1);
+            while (this.allMessages.size() > 100)
+                this.allMessages.remove(this.allMessages.size() - 1);
         }
 
         ci.cancel();
     }
 
-    @Inject(method = "refreshChat()V", at = @At("HEAD"), remap = false)
-    public void refreshChat(CallbackInfo ci)
+    @Inject(method = "rescaleChat", at = @At("HEAD"))
+    public void rescaleChat(CallbackInfo ci)
     {
         index = 0;
     }
 
+    @Inject(method = "resetChatScroll", at = @At("RETURN"))
+    public void resetChatScroll(CallbackInfo ci) {
+        setScrollPos(chatScrollbarPos);
+    }
+
+    @Inject(method = "scrollChat", at = @At("RETURN"))
+    public void scrollChat(int i, CallbackInfo ci) {
+        setScrollPos(chatScrollbarPos);
+    }
+
     @SuppressWarnings("ConstantConditions")
-    @Inject(method = "func_238491_a_(DD)Z", at = @At("HEAD"), cancellable = true, remap = false)
-    public void func_238491_a_(double mouseX, double mouseY, CallbackInfoReturnable<Boolean> cir)
+    @Inject(method = "handleChatQueueClicked", at = @At("HEAD"), cancellable = true)
+    public void handleChatQueueClicked(double mouseX, double mouseY, CallbackInfoReturnable<Boolean> cir)
     {
-        if (NewChatGuiUtil.displayImageEmbedScreen(mc, scrollPos, getEmbed(mouseX, mouseY)))
+        if (ChatGuiUtil.displayImageEmbedScreen(minecraft, chatScrollbarPos, getEmbed(mouseX, mouseY)))
             cir.setReturnValue(true);
     }
 
@@ -285,21 +292,21 @@ public abstract class NewChatGuiMixin
     @Nullable
     private Embed getEmbed(double mouseX, double mouseY)
     {
-        if (this.getChatOpen() && !this.mc.gameSettings.hideGUI && !this.func_238496_i_())
+        if (this.isChatFocused() && !this.minecraft.options.hideGui && !this.isChatHidden())
         {
             double d0 = mouseX - 2.0D;
-            double d1 = (double) this.mc.getMainWindow().getScaledHeight() - mouseY - 40.0D;
-            d0 = MathHelper.floor(d0 / this.getScale());
-            d1 = MathHelper.floor(d1 / (this.getScale() * (this.mc.gameSettings.chatLineSpacing + 1.0D)));
+            double d1 = (double) this.minecraft.getWindow().getGuiScaledHeight() - mouseY - 40.0D;
+            d0 = Mth.floor(d0 / this.getScale());
+            d1 = Mth.floor(d1 / (this.getScale() * (this.minecraft.options.chatLineSpacing + 1.0D)));
             if (!(d0 < 0.0D) && !(d1 < 0.0D))
             {
-                int i = Math.min(this.getLineCount(), this.drawnChatLines.size());
-                if (d0 <= (double) MathHelper.floor((double) this.getChatWidth() / this.getScale()) && d1 < (double) (9 * i + i))
+                int i = Math.min(this.getLinesPerPage(), this.trimmedMessages.size());
+                if (d0 <= (double) Mth.floor((double) this.getWidth() / this.getScale()) && d1 < (double) (9 * i + i))
                 {
-                    int j = (int) (d1 / 9.0D + (double) this.scrollPos);
-                    if (j >= 0 && j < this.drawnChatLines.size())
+                    int j = (int) (d1 / 9.0D + (double) this.chatScrollbarPos);
+                    if (j >= 0 && j < this.trimmedMessages.size())
                     {
-                        ChatLine<IReorderingProcessor> chatLine = this.drawnChatLines.get(j);
+                        GuiMessage<FormattedCharSequence> chatLine = this.trimmedMessages.get(j);
                         if (chatLine instanceof EmbedChatLine)
                         {
                             if (d0 - 3 <= ((EmbedChatLine<?>) chatLine).getWidth())

@@ -1,9 +1,10 @@
 package com.yunus1903.chatembeds.client.screen;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.yunus1903.chatembeds.client.embed.AnimatedImageEmbed;
-import net.minecraft.client.gui.AbstractGui;
-import net.minecraft.client.gui.screen.ChatScreen;
+import net.minecraft.client.gui.GuiComponent;
+import net.minecraft.client.gui.screens.ChatScreen;
 
 /**
  * @author Yunus1903
@@ -21,12 +22,12 @@ public class AnimatedImageEmbedScreen extends AbstractImageEmbedScreen<AnimatedI
     }
 
     @Override
-    public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks)
+    public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks)
     {
         if (minecraft == null) return;
         super.render(matrixStack, mouseX, mouseY, partialTicks);
 
-        final int frameIndex = minecraft.frameTimer.getIndex();
+        final int frameIndex = minecraft.frameTimer.getLogEnd();
 
         if (lastFrameIndex != frameIndex)
         {
@@ -41,8 +42,9 @@ public class AnimatedImageEmbedScreen extends AbstractImageEmbedScreen<AnimatedI
             else currentFrame++;
         }
 
-        minecraft.getTextureManager().bindTexture(embed.getFrames().get(currentFrame).getResourceLocation());
-        AbstractGui.blit(matrixStack, (width - scaledImageWidth) / 2,
+        RenderSystem.setShaderTexture(0, embed.getFrames().get(currentFrame).getResourceLocation());
+        RenderSystem.enableBlend();
+        GuiComponent.blit(matrixStack, (width - scaledImageWidth) / 2,
                 (height - scaledImageHeight) / 2, 0, 0,
                 scaledImageWidth, scaledImageHeight, scaledImageWidth, scaledImageHeight);
     }

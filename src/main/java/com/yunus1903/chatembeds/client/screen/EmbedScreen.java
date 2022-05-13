@@ -1,10 +1,10 @@
 package com.yunus1903.chatembeds.client.screen;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.yunus1903.chatembeds.client.embed.Embed;
-import net.minecraft.client.gui.screen.ChatScreen;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.client.gui.screens.ChatScreen;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.TextComponent;
 
 /**
  * Abstract class for {@link Embed} screen's
@@ -25,23 +25,23 @@ public abstract class EmbedScreen<T extends Embed> extends Screen
      */
     public EmbedScreen(ChatScreen parent, int scrollPos, T embed)
     {
-        super(new StringTextComponent("Embed image"));
+        super(new TextComponent("Embed image"));
         this.parent = parent;
         this.scrollPos = scrollPos;
         this.embed = embed;
     }
 
     @Override
-    public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks)
+    public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks)
     {
         renderBackground(matrixStack);
     }
 
     @Override
-    public void closeScreen()
+    public void onClose()
     {
         if (minecraft == null) return;
-        minecraft.displayGuiScreen(parent);
-        minecraft.ingameGUI.getChatGUI().scrollPos = scrollPos;
+        minecraft.setScreen(parent);
+        minecraft.gui.getChat().scrollChat(scrollPos);
     }
 }

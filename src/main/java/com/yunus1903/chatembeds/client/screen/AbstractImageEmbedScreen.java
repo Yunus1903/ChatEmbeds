@@ -1,11 +1,15 @@
 package com.yunus1903.chatembeds.client.screen;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.platform.NativeImage;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.yunus1903.chatembeds.client.embed.Embed;
-import net.minecraft.client.gui.screen.ChatScreen;
-import net.minecraft.client.renderer.texture.NativeImage;
-import net.minecraft.util.text.*;
-import net.minecraft.util.text.event.ClickEvent;
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.gui.screens.ChatScreen;
+import net.minecraft.locale.Language;
+import net.minecraft.network.chat.ClickEvent;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.TextComponent;
 
 /**
  * @author Yunus1903
@@ -15,7 +19,7 @@ public abstract class AbstractImageEmbedScreen<T extends Embed> extends EmbedScr
 {
     private final int imageWidth, imageHeight;
     protected int scaledImageWidth, scaledImageHeight;
-    private IFormattableTextComponent openImage;
+    private MutableComponent openImage;
 
     public AbstractImageEmbedScreen(ChatScreen parent, int scrollPos, T embed, NativeImage image)
     {
@@ -42,25 +46,25 @@ public abstract class AbstractImageEmbedScreen<T extends Embed> extends EmbedScr
             }
         }
 
-        openImage = new StringTextComponent("Open image");
+        openImage = new TextComponent("Open image");
     }
 
     @Override
-    public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks)
+    public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks)
     {
         if (minecraft == null) return;
         super.render(matrixStack, mouseX, mouseY, partialTicks);
 
-        if (mouseOverImage(mouseX, mouseY)) openImage.mergeStyle(TextFormatting.UNDERLINE);
+        if (mouseOverImage(mouseX, mouseY)) openImage.withStyle(ChatFormatting.UNDERLINE);
         else
         {
-            openImage.setStyle(Style.EMPTY.setClickEvent(
+            openImage.setStyle(Style.EMPTY.withClickEvent(
                     new ClickEvent(ClickEvent.Action.OPEN_URL, embed.getUrl().toString())));
-            openImage.mergeStyle(TextFormatting.DARK_GRAY);
+            openImage.withStyle(ChatFormatting.DARK_GRAY);
         }
 
-        minecraft.fontRenderer.func_238407_a_(matrixStack,
-                LanguageMap.getInstance().func_241870_a(openImage),
+        minecraft.font.drawShadow(matrixStack,
+                Language.getInstance().getVisualOrder(openImage),
                 (width - scaledImageWidth) >> 1,
                 ((height - scaledImageHeight) >> 1) + scaledImageHeight + 5,
                 0xFFFFFF);
@@ -75,7 +79,7 @@ public abstract class AbstractImageEmbedScreen<T extends Embed> extends EmbedScr
                 || mouseY > ((height - scaledImageHeight) >> 1) + scaledImageHeight)
         {
             if (mouseOverImage(mouseX, mouseY)) handleComponentClicked(openImage.getStyle());
-            else closeScreen();
+            else onClose();
             return true;
         }
         return super.mouseClicked(mouseX, mouseY, button);
@@ -92,10 +96,10 @@ public abstract class AbstractImageEmbedScreen<T extends Embed> extends EmbedScr
         return minecraft != null
                 && mouseX >= ((width - scaledImageWidth) >> 1)
                 && mouseX <= ((width - scaledImageWidth) >> 1)
-                + minecraft.fontRenderer.getStringWidth(openImage.getString())
+                + minecraft.font.width(openImage.getString())
                 && mouseY >= ((height - scaledImageHeight) >> 1)
                 + scaledImageHeight + 5
                 && mouseY <= ((height - scaledImageHeight) >> 1)
-                + scaledImageHeight + 5 + minecraft.fontRenderer.FONT_HEIGHT;
+                + scaledImageHeight + 5 + minecraft.font.lineHeight;
     }
 }

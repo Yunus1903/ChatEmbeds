@@ -6,6 +6,6 @@
 @ParametersAreNonnullByDefault
 package com.yunus1903.chatembeds.client.embed;
 
-import mcp.MethodsReturnNonnullByDefault;
+import net.minecraft.MethodsReturnNonnullByDefault;
 
 import javax.annotation.ParametersAreNonnullByDefault;

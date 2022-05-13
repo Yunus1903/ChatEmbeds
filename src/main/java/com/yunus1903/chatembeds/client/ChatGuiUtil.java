@@ -7,16 +7,16 @@ import com.yunus1903.chatembeds.client.embed.ImageEmbed;
 import com.yunus1903.chatembeds.client.screen.AnimatedImageEmbedScreen;
 import com.yunus1903.chatembeds.client.screen.ImageEmbedScreen;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screen.ChatScreen;
-import net.minecraft.util.DefaultUncaughtExceptionHandler;
+import net.minecraft.client.gui.screens.ChatScreen;
+import net.minecraft.DefaultUncaughtExceptionHandler;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Yunus1903
  * @since 01/02/2021
  */
-public class NewChatGuiUtil
+public class ChatGuiUtil
 {
     public static Thread getThread(String name, Runnable runnable)
     {
@@ -43,18 +43,18 @@ public class NewChatGuiUtil
         };
     }
 
-    public static boolean displayImageEmbedScreen(@Nonnull Minecraft mc, int scrollPos, Embed embed)
+    public static boolean displayImageEmbedScreen(@NotNull Minecraft mc, int scrollPos, Embed embed)
     {
-        if (mc.currentScreen instanceof ChatScreen)
+        if (mc.screen instanceof ChatScreen)
         {
             if (embed instanceof AnimatedImageEmbed)
             {
-                mc.displayGuiScreen(new AnimatedImageEmbedScreen((ChatScreen) mc.currentScreen, scrollPos, (AnimatedImageEmbed) embed));
+                mc.setScreen(new AnimatedImageEmbedScreen((ChatScreen) mc.screen, scrollPos, (AnimatedImageEmbed) embed));
                 return true;
             }
             if (embed instanceof ImageEmbed)
             {
-                mc.displayGuiScreen(new ImageEmbedScreen((ChatScreen) mc.currentScreen, scrollPos, (ImageEmbed) embed));
+                mc.setScreen(new ImageEmbedScreen((ChatScreen) mc.screen, scrollPos, (ImageEmbed) embed));
                 return true;
             }
         }

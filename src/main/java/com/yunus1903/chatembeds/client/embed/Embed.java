@@ -2,8 +2,8 @@ package com.yunus1903.chatembeds.client.embed;
 
 import com.yunus1903.chatembeds.ChatEmbeds;
 import com.yunus1903.chatembeds.ChatEmbedsConfig;
-import net.minecraft.client.gui.ChatLine;
-import net.minecraft.util.IReorderingProcessor;
+import net.minecraft.client.GuiMessage;
+import net.minecraft.util.FormattedCharSequence;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -23,7 +23,7 @@ public abstract class Embed
     final int ticks, chatLineId;
     @Nullable
     final HttpURLConnection connection;
-    private final List<? extends ChatLine<IReorderingProcessor>> chatLines;
+    private final List<? extends GuiMessage<FormattedCharSequence>> chatLines;
 
     /**
      * Constructor
@@ -63,14 +63,14 @@ public abstract class Embed
 
     /**
      * Creates the chatlines
-     * @return A list of {@link ChatLine chatlines}
+     * @return A list of {@link GuiMessage chatlines}
      */
-    abstract List<? extends ChatLine<IReorderingProcessor>> createChatLines();
+    abstract List<? extends GuiMessage<FormattedCharSequence>> createChatLines();
 
     /**
-     * @return List of {@link ChatLine chatlines}
+     * @return List of {@link GuiMessage chatlines}
      */
-    public List<? extends ChatLine<IReorderingProcessor>> getChatLines()
+    public List<? extends GuiMessage<FormattedCharSequence>> getChatLines()
     {
         return chatLines;
     }

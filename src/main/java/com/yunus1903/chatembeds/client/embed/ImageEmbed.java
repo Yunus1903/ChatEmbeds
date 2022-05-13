@@ -1,19 +1,20 @@
 package com.yunus1903.chatembeds.client.embed;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.platform.NativeImage;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.yunus1903.chatembeds.ChatEmbeds;
 import com.yunus1903.chatembeds.ChatEmbedsConfig;
 import com.yunus1903.chatembeds.client.EmbedChatLine;
+import net.minecraft.client.GuiMessage;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.AbstractGui;
-import net.minecraft.client.gui.ChatLine;
-import net.minecraft.client.gui.NewChatGui;
+import net.minecraft.client.gui.GuiComponent;
+import net.minecraft.client.gui.components.ChatComponent;
 import net.minecraft.client.renderer.texture.DynamicTexture;
-import net.minecraft.client.renderer.texture.NativeImage;
-import net.minecraft.util.IReorderingProcessor;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.LanguageMap;
-import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.locale.Language;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.FormattedCharSequence;
 
 import java.io.IOException;
 import java.net.URL;
@@ -37,13 +38,13 @@ public class ImageEmbed extends Embed
     }
 
     @Override
-    List<? extends ChatLine<IReorderingProcessor>> createChatLines()
+    List<? extends GuiMessage<FormattedCharSequence>> createChatLines()
     {
-        List<ChatLine<IReorderingProcessor>> lines = new ArrayList<>();
+        List<GuiMessage<FormattedCharSequence>> lines = new ArrayList<>();
         if (!loadImage()) return lines;
 
         if (!ChatEmbedsConfig.GeneralConfig.removeUrlMessage)
-            lines.add(new ChatLine<>(ticks, LanguageMap.getInstance().func_241870_a(new StringTextComponent("")), chatLineId));
+            lines.add(new GuiMessage<>(ticks, Language.getInstance().getVisualOrder(new TextComponent("")), chatLineId));
 
         double imageHeight = scaledImage.getHeight();
         double lineHeight = 9.0D;
@@ -59,13 +60,14 @@ public class ImageEmbed extends Embed
             int textureWidth = scaledImage.getWidth();
             int textureHeight = scaledImage.getHeight();
 
-            lines.add(new EmbedChatLine<ImageEmbed>(ticks, chatLineId, this)
+            lines.add(new EmbedChatLine<>(ticks, chatLineId, this)
             {
                 @Override
-                public void render(Minecraft mc, MatrixStack matrixStack, int x, int y)
+                public void render(Minecraft mc, PoseStack matrixStack, int x, int y)
                 {
-                    mc.getTextureManager().bindTexture(imageResourceLocation);
-                    AbstractGui.blit(matrixStack, x, y, u0, v0, destWidth, destHeight, textureWidth, textureHeight);
+                    RenderSystem.setShaderTexture(0, imageResourceLocation);
+                    RenderSystem.enableBlend();
+                    GuiComponent.blit(matrixStack, x, y, u0, v0, destWidth, destHeight, textureWidth, textureHeight);
                 }
 
                 @Override
@@ -93,12 +95,12 @@ public class ImageEmbed extends Embed
 
         if (image == null) return false;
 
-        NewChatGui gui = Minecraft.getInstance().ingameGUI.persistantChatGUI;
+        ChatComponent gui = Minecraft.getInstance().gui.getChat();
         scaledImage = scaleImage(image,
-                Math.min(ChatEmbedsConfig.GeneralConfig.chatImageEmbedMaxWidth, gui.getChatWidth()),
+                Math.min(ChatEmbedsConfig.GeneralConfig.chatImageEmbedMaxWidth, gui.getWidth()),
                 ChatEmbedsConfig.GeneralConfig.chatImageEmbedMaxHeight);
         imageResourceLocation = Minecraft.getInstance().getTextureManager()
-                .getDynamicTextureLocation("chat_embed_image", new DynamicTexture(image));
+                .register("chat_embed_image", new DynamicTexture(image));
 
         return true;
     }

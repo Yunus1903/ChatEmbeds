@@ -315,7 +315,6 @@ public final class GifDecoder {
          * that table. If not, the color will be from the global color table.
          * Returns 0 if there is neither a local nor a global color table.
          *
-         * @param index
          *            Index of the current frame, 0 to N-1
          * @return 32 bit ARGB color in the form 0xAARRGGBB
          */
@@ -491,7 +490,7 @@ public final class GifDecoder {
     }
 
     /**
-     * @param ext
+     * @param img
      *            Empty application extension object
      * @param in
      *            Raw data
@@ -538,7 +537,7 @@ public final class GifDecoder {
     }
 
     /**
-     * @param ext
+     * @param fr
      *            Graphic control extension object
      * @param in
      *            Raw data
